@@ -5,6 +5,7 @@ import (
 	structs "forum/Data"
 	database "forum/Database"
 	"net/http"
+	"strconv"
 )
 
 func LikedPosts(w http.ResponseWriter, r *http.Request) {
@@ -25,7 +26,15 @@ func LikedPosts(w http.ResponseWriter, r *http.Request) {
 		Errors(w, structs.Error{Code: http.StatusNotFound, Message: "Page not found", Page: "Home", Path: "/"})
 		return
 	}
-	myLikes, err := database.GetMyLikes(user.ID)
+	limit := 10
+	offset := 0
+	if r.URL.Query().Get("limit") != "" {
+		limit, _ = strconv.Atoi(r.URL.Query().Get("limit"))
+	}
+	if r.URL.Query().Get("offset") != "" {
+		offset, _ = strconv.Atoi(r.URL.Query().Get("offset"))
+	}
+	myLikes, err := database.GetMyLikes(user.ID, limit, offset)
 	if err != nil {
 		Errors(w, structs.Error{Code: http.StatusInternalServerError, Message: "Error loading posts liked by me", Page: "Home", Path: "/"})
 		return

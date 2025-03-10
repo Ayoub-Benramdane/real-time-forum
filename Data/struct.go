@@ -11,6 +11,7 @@ type User struct {
 	Password    string    `sqlite:"password" json:"-"`
 	CreatedAt   time.Time `sqlite:"created_at" json:"created_at"`
 	Status      string    `sqlite:"status" json:"status"`
+	Online      bool      `json:"online"`
 	ConnectedAt time.Time `sqlite:"connected_at" json:"connected_at"`
 }
 

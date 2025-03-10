@@ -1,5 +1,7 @@
 import { displayPosts } from "./panel.js";
 
+export let Socket = {};
+
 document.addEventListener("click", function (e) {
   const loginPanel = e.target.closest("#login");
   if (loginPanel) {
@@ -52,6 +54,16 @@ document.addEventListener("submit", async function (event) {
       });
 
       if (response.ok) {
+         Socket = new WebSocket("/ws");
+        
+        Socket.addEventListener("message", (e) => {
+          let data = JSON.parse(e.data);
+          if (data.type == "online") {
+            console.log(data.content);
+          }else if (data.type == "message"){
+            console.log("chat recieved: ", data.content)
+          }
+        });
         document.getElementById("login-panel").remove();
         document.getElementById("register-panel").remove();
 

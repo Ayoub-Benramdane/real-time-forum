@@ -1,5 +1,4 @@
-import { displayChat } from "./panel.js";
-
+import {Socket} from "./login.js"
 export function loadChat(userId, username, messages) {
   const chatMessages = document.getElementById("chatMessages");
 
@@ -32,14 +31,17 @@ export async function sendMessage(event) {
   event.preventDefault();
   const chatMessages = document.getElementById("chatMessages");
   const userId = chatMessages.dataset.userId;
-  const username = chatMessages.dataset.username;
   const content = document.getElementById("messageInput").value.trim();
   const message = {
     userId: parseInt(userId, 10),
     content: content,
+    type : "message",
   };
   if (message.content) {
     try {
+      console.log(Socket);
+      
+      Socket.send(JSON.stringify(message))
       const response = await fetch(`/send-message`, {
         method: "POST",
         headers: {
@@ -50,20 +52,20 @@ export async function sendMessage(event) {
       });
 
       if (response.ok) {
-        const currentUsername = username;
-        await displayChat();
-        setTimeout(() => {
-          document.querySelectorAll(".user-item").forEach((item) => {
-            if (
-              item
-                .querySelector(".username")
-                .textContent.includes(currentUsername)
-            ) {
-              item.click();
-            }
-          });
-        }, 1);
+        const messageDiv = document.createElement("div");
+        messageDiv.className = "message sent";
+        const messageContent = document.createElement("div");
+        messageContent.className = "message-content";
+        messageContent.innerHTML = message.content;
+        messageDiv.appendChild(messageContent);
+        const messageTime = document.createElement("div");
+        messageTime.className = "message-time";
+        messageTime.innerHTML = "Just now";
+        messageDiv.appendChild(messageTime);
+        const div = document.getElementById("chatMessages");
+        div.appendChild(messageDiv);
         document.querySelector("#messageInput").value = "";
+        document.getElementById(`last-message-${message.userId}`).innerHTML = message.content;
       }
     } catch (error) {
       console.error("Error sending message:", error);

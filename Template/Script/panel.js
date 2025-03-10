@@ -17,8 +17,10 @@ document.addEventListener("click", function (e) {
     navItem.classList.add("active");
     const panelId = navItem.dataset.panel;
     const panel = document.getElementById(panelId);
+    document.getElementById(panelId).innerHTML = "";
     if (panel) {
       panel.classList.add("active");
+      offset = 0;
       switch (panelId) {
         case "all-posts":
           displayPosts();
@@ -42,9 +44,12 @@ document.addEventListener("click", function (e) {
   }
 });
 
+let offset = 0;
+const limit = 10;
+
 export async function displayPosts() {
   try {
-    const response = await fetch("/all-posts", {
+    const response = await fetch(`/all-posts?limit=${limit}&offset=${offset}`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -52,17 +57,36 @@ export async function displayPosts() {
     });
     if (response.ok) {
       const posts = await response.json();
-      let divPosts = document.getElementById("all-posts");
+      const divPosts = document.getElementById("all-posts");
       appendPosts(posts, divPosts);
+      offset += limit;
     }
   } catch (error) {
     console.error("Error fetching posts:", error);
   }
 }
 
+window.addEventListener("scroll", () => {
+  const { scrollTop, scrollHeight, clientHeight } = document.documentElement;
+  if (scrollTop + clientHeight >= scrollHeight - 10) {
+    const panelId = document.querySelector(".panel.active").id;
+    switch (panelId) {
+      case "all-posts":
+        displayPosts();
+        break;
+      case "my-posts":
+        displayMyPosts();
+        break;
+      case "liked-posts":
+        displayLikedPosts();
+        break;
+    }
+  }
+});
+
 async function displayMyPosts() {
   try {
-    const response = await fetch("/my-posts", {
+    const response = await fetch(`/my-posts?limit=${limit}&offset=${offset}`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -72,6 +96,7 @@ async function displayMyPosts() {
       const posts = await response.json();
       let divPosts = document.getElementById("my-posts");
       appendPosts(posts, divPosts);
+      offset += limit;
     }
   } catch (error) {
     console.error("Error fetching my posts:", error);
@@ -80,16 +105,20 @@ async function displayMyPosts() {
 
 async function displayLikedPosts() {
   try {
-    const response = await fetch("/liked-posts", {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
+    const response = await fetch(
+      `/liked-posts?limit=${limit}&offset=${offset}`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
     if (response.ok) {
       const posts = await response.json();
       let divPosts = document.getElementById("liked-posts");
       appendPosts(posts, divPosts);
+      offset += limit;
     }
   } catch (error) {
     console.error("Error fetching liked posts:", error);
@@ -97,81 +126,83 @@ async function displayLikedPosts() {
 }
 
 function appendPosts(posts, divPosts) {
-  divPosts.innerHTML = "";
-  if (posts == null) {
-    const postDiv = document.createElement("h3");
-    postDiv.style = "text-align:center";
-    postDiv.innerHTML = "No Posts Available";
-    divPosts.append(postDiv);
-  } else {
-    posts.forEach((Post) => {
-      const postDiv = document.createElement("div");
-      postDiv.id = "post";
-      postDiv.className = "post";
-
-      const postHeader = document.createElement("div");
-      postHeader.className = "post-header";
-
-      const userAvatar = document.createElement("div");
-      userAvatar.className = "user-avatar";
-      userAvatar.innerHTML = `<i class="fas fa-user-circle"></i><span class="post-author"> ${Post.author}</span>`;
-      postHeader.appendChild(userAvatar);
-
-      const postDate = document.createElement("span");
-      postDate.className = "post-date";
-      postDate.textContent = Post.created_at;
-      postHeader.appendChild(postDate);
-
-      postDiv.appendChild(postHeader);
-
-      const postTitle = document.createElement("h3");
-      postTitle.className = "post-title";
-      postTitle.textContent = Post.title;
-      postDiv.appendChild(postTitle);
-
-      const postContent = document.createElement("p");
-      postContent.className = "post-content";
-      postContent.textContent = Post.content;
-      postDiv.appendChild(postContent);
-
-      const categoryTags = document.createElement("div");
-      categoryTags.className = "category-tags";
-      Post.categories.forEach((category) => {
-        const tag = document.createElement("span");
-        tag.className = "category-tag";
-        tag.textContent = `#${category}`;
-        categoryTags.appendChild(tag);
-      });
-      postDiv.appendChild(categoryTags);
-
-      const postActions = document.createElement("div");
-      postActions.className = "post-actions";
-
-      const likeButton = document.createElement("button");
-      likeButton.id = `like-btn-${Post.id}`;
-      likeButton.className = "action-btn";
-      likeButton.innerHTML = `<i class="fas fa-thumbs-up"></i><span id="like-count-${Post.id}">${Post.total_likes}</span>`;
-      postActions.appendChild(likeButton);
-
-      const dislikeButton = document.createElement("button");
-      dislikeButton.id = `dislike-btn-${Post.id}`;
-      dislikeButton.className = "action-btn";
-      dislikeButton.innerHTML = `<i class="fas fa-thumbs-down"></i><span id="dislike-count-${Post.id}">${Post.total_dislikes}</span>`;
-      postActions.appendChild(dislikeButton);
-
-      const commentButton = document.createElement("button");
-      commentButton.className = "comment-btn";
-      commentButton.id = `show-post-${Post.id}`;
-      commentButton.innerHTML = `<i class="fas fa-comment"></i><span id="commentCountBtn">${Post.total_comments}</span> Comments`;
-      postActions.appendChild(commentButton);
-
-      postDiv.appendChild(postActions);
+  if (posts == null || posts.length === 0) {
+    if (offset === 0) {
+      const postDiv = document.createElement("h3");
+      postDiv.style = "text-align:center";
+      postDiv.innerHTML = "No Posts Available";
       divPosts.append(postDiv);
-    });
+    }
+    return;
   }
+
+  posts.forEach((Post) => {
+    const postDiv = document.createElement("div");
+    postDiv.id = "post";
+    postDiv.className = "post";
+
+    const postHeader = document.createElement("div");
+    postHeader.className = "post-header";
+
+    const userAvatar = document.createElement("div");
+    userAvatar.className = "user-avatar";
+    userAvatar.innerHTML = `<i class="fas fa-user-circle"></i><span class="post-author"> ${Post.author}</span>`;
+    postHeader.appendChild(userAvatar);
+
+    const postDate = document.createElement("span");
+    postDate.className = "post-date";
+    postDate.textContent = Post.created_at;
+    postHeader.appendChild(postDate);
+
+    postDiv.appendChild(postHeader);
+
+    const postTitle = document.createElement("h3");
+    postTitle.className = "post-title";
+    postTitle.textContent = Post.title;
+    postDiv.appendChild(postTitle);
+
+    const postContent = document.createElement("p");
+    postContent.className = "post-content";
+    postContent.textContent = Post.content;
+    postDiv.appendChild(postContent);
+
+    const categoryTags = document.createElement("div");
+    categoryTags.className = "category-tags";
+    Post.categories.forEach((category) => {
+      const tag = document.createElement("span");
+      tag.className = "category-tag";
+      tag.textContent = `#${category}`;
+      categoryTags.appendChild(tag);
+    });
+    postDiv.appendChild(categoryTags);
+
+    const postActions = document.createElement("div");
+    postActions.className = "post-actions";
+
+    const likeButton = document.createElement("button");
+    likeButton.id = `like-btn-${Post.id}`;
+    likeButton.className = "action-btn";
+    likeButton.innerHTML = `<i class="fas fa-thumbs-up"></i><span id="like-count-${Post.id}">${Post.total_likes}</span>`;
+    postActions.appendChild(likeButton);
+
+    const dislikeButton = document.createElement("button");
+    dislikeButton.id = `dislike-btn-${Post.id}`;
+    dislikeButton.className = "action-btn";
+    dislikeButton.innerHTML = `<i class="fas fa-thumbs-down"></i><span id="dislike-count-${Post.id}">${Post.total_dislikes}</span>`;
+    postActions.appendChild(dislikeButton);
+
+    const commentButton = document.createElement("button");
+    commentButton.className = "comment-btn";
+    commentButton.id = `show-post-${Post.id}`;
+    commentButton.innerHTML = `<i class="fas fa-comment"></i><span id="commentCountBtn">${Post.total_comments}</span> Comments`;
+    postActions.appendChild(commentButton);
+
+    postDiv.appendChild(postActions);
+    divPosts.append(postDiv);
+  });
 }
 
-export async function displayChat() {
+async function displayChat() {
   try {
     const response = await fetch("/chat", {
       method: "GET",
@@ -182,6 +213,7 @@ export async function displayChat() {
     if (response.ok) {
       const chatData = await response.json();
       const mainContainer = document.getElementById("chat");
+      mainContainer.innerHTML = ""
       appendChats(mainContainer, chatData);
     }
   } catch (error) {
@@ -190,8 +222,6 @@ export async function displayChat() {
 }
 
 function appendChats(mainContainer, chatData) {
-  mainContainer.innerHTML = "";
-
   const chatContainer = document.createElement("div");
   chatContainer.className = "chat-container";
 
@@ -246,6 +276,7 @@ function appendChats(mainContainer, chatData) {
 
       const lastMessageSpan = document.createElement("span");
       lastMessageSpan.className = "last-message";
+      lastMessageSpan.id = `last-message-${conversation.User.id}`;
       if (conversation.LastMessage !== "") {
         lastMessageSpan.textContent = conversation.LastMessage;
       } else {
@@ -333,7 +364,6 @@ async function createPost() {
 }
 
 function createNewPostForm(mainContainer, categories) {
-  mainContainer.innerHTML = "";
   const form = document.createElement("form");
   form.id = "new-post";
   form.method = "post";

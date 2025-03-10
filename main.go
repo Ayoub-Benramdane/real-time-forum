@@ -1,8 +1,8 @@
 package main
 
 import (
-	"forum/Database"
-	"forum/Server"
+	database "forum/Database"
+	server "forum/Server"
 	"log"
 	"net/http"
 	"os"
@@ -12,8 +12,8 @@ func main() {
 	if len(os.Args) != 1 {
 		return
 	} else if err := database.ConnectDatabase(); err != nil {
-        log.Fatalf("Failed to initialize database: %v", err)
-    }
+		log.Fatalf("Failed to initialize database: %v", err)
+	}
 
 	fs := http.FileServer(http.Dir("./Template"))
 	http.Handle("/Template/", http.StripPrefix("/Template/", fs))
@@ -36,6 +36,7 @@ func main() {
 	http.HandleFunc("/like_comment/", server.LikeComment)
 	http.HandleFunc("/dislike_comment/", server.DislikeComment)
 	http.HandleFunc("/send-message", server.SendMessage)
+	http.HandleFunc("/ws", server.Websockethandler)
 	log.Println("Server is running...")
 	log.Println("Link: http://localhost:8404")
 	log.Fatal(http.ListenAndServe(":8404", nil))

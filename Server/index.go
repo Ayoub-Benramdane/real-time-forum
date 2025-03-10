@@ -31,7 +31,7 @@ func Index(w http.ResponseWriter, r *http.Request) {
 	} else {
 		user = &structs.User{Status: "Disconnected"}
 	}
-	posts, errLoadPost := database.GetPosts(0)
+	posts, errLoadPost := database.GetPosts(10, 0)
 	if errLoadPost != nil {
 		Errors(w, structs.Error{Code: http.StatusInternalServerError, Message: "Error loading posts", Page: "Home", Path: "/"})
 		return
