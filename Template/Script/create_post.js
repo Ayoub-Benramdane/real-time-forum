@@ -8,8 +8,6 @@ document.addEventListener("submit", async function (e) {
       let categories = Array.from(
         document.getElementById("category-post").selectedOptions
       ).map((option) => option.value);
-      console.log(categories);
-
       const postData = {
         title: title,
         content: content,

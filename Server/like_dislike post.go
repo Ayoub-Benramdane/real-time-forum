@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
-	"time"
 
 	structs "forum/Data"
 	database "forum/Database"
@@ -39,9 +38,6 @@ func LikePost(w http.ResponseWriter, r *http.Request) {
 		Errors(w, structs.Error{Code: http.StatusInternalServerError, Message: "Error Deleting Like", Page: "Post", Path: "/"})
 		return
 	}
-	cookie.Expires = time.Now().Add(5 * time.Minute)
-	cookie.Path = "/"
-	http.SetCookie(w, cookie)
 	updatedLikes, errLikesPost := database.CountLikes(idPost)
 	if errLikesPost != nil {
 		Errors(w, structs.Error{Code: http.StatusInternalServerError, Message: "Error counting Like", Page: "Post", Path: "/"})
@@ -92,9 +88,6 @@ func DislikePost(w http.ResponseWriter, r *http.Request) {
 		Errors(w, structs.Error{Code: http.StatusInternalServerError, Message: "Error Deleting Dislike", Page: "Post", Path: "/"})
 		return
 	}
-	cookie.Expires = time.Now().Add(5 * time.Minute)
-	cookie.Path = "/"
-	http.SetCookie(w, cookie)
 	updatedLikes, errLikesPost := database.CountLikes(idPost)
 	if errLikesPost != nil {
 		Errors(w, structs.Error{Code: http.StatusInternalServerError, Message: "Error counting Like", Page: "Post", Path: "/"})

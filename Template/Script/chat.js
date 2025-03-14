@@ -1,16 +1,42 @@
-import {Socket} from "./login.js"
-export function loadChat(userId, username, messages) {
-  const chatMessages = document.getElementById("chatMessages");
+import { Socket, displayChat } from "./panel.js";
 
+export function loadChat(userId, username, messages) {
+  const chatSection = document.querySelector("#chat-section");
+  let chatMessages = document.getElementById("chatMessages");
+  if (!chatMessages) {
+    const chatMessages = document.createElement("div");
+    chatMessages.className = "chat-messages";
+    chatMessages.id = "chatMessages";
+    chatSection.appendChild(chatMessages);
+
+    const chatInput = document.createElement("div");
+    chatInput.className = "chat-input";
+
+    const messageForm = document.createElement("form");
+    messageForm.id = "messageForm";
+
+    messageForm.onsubmit = sendMessage;
+
+    const messageInput = document.createElement("input");
+    messageInput.type = "text";
+    messageInput.id = "messageInput";
+    messageInput.placeholder = "Type your message...";
+    messageForm.appendChild(messageInput);
+
+    const messageButton = document.createElement("button");
+    messageButton.type = "submit";
+    messageButton.innerHTML = '<i class="fas fa-paper-plane"></i>';
+    messageForm.appendChild(messageButton);
+
+    chatInput.appendChild(messageForm);
+    chatSection.appendChild(chatInput);
+  }
+
+  chatMessages = document.getElementById("chatMessages");
   chatMessages.dataset.userId = userId;
   chatMessages.dataset.username = username;
 
   document.getElementById("currentChatUser").textContent = username;
-  document.getElementById("messageInput").disabled = false;
-  document
-    .getElementById("messageForm")
-    .querySelector("button").disabled = false;
-
   chatMessages.innerHTML = "";
   if (messages) {
     messages.forEach((message) => {
@@ -33,43 +59,12 @@ export async function sendMessage(event) {
   const userId = chatMessages.dataset.userId;
   const content = document.getElementById("messageInput").value.trim();
   const message = {
-    userId: parseInt(userId, 10),
+    reciever_id: parseInt(userId, 10),
     content: content,
-    type : "message",
+    type: "message",
   };
   if (message.content) {
-    try {
-      console.log(Socket);
-      
-      Socket.send(JSON.stringify(message))
-      const response = await fetch(`/send-message`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-
-        body: JSON.stringify(message),
-      });
-
-      if (response.ok) {
-        const messageDiv = document.createElement("div");
-        messageDiv.className = "message sent";
-        const messageContent = document.createElement("div");
-        messageContent.className = "message-content";
-        messageContent.innerHTML = message.content;
-        messageDiv.appendChild(messageContent);
-        const messageTime = document.createElement("div");
-        messageTime.className = "message-time";
-        messageTime.innerHTML = "Just now";
-        messageDiv.appendChild(messageTime);
-        const div = document.getElementById("chatMessages");
-        div.appendChild(messageDiv);
-        document.querySelector("#messageInput").value = "";
-        document.getElementById(`last-message-${message.userId}`).innerHTML = message.content;
-      }
-    } catch (error) {
-      console.error("Error sending message:", error);
-    }
+    Socket.send(JSON.stringify(message));
   }
 }
 
@@ -82,5 +77,45 @@ document.addEventListener("input", function (e) {
         .textContent.toLowerCase();
       userItem.style.display = username.includes(searchTerm) ? "" : "none";
     });
+  }
+});
+
+async function selectUser(username) {
+  const activeNavItem = document.querySelector(".nav-item.active");
+  const activePanel = document.querySelector(".panel.active");
+
+  if (activeNavItem) {
+    activeNavItem.classList.remove("active");
+  }
+  if (activePanel) {
+    activePanel.classList.remove("active");
+  }
+  document.getElementById("chat-item").classList.add("active");
+  document.getElementById("chat").innerHTML = "";
+  document.getElementById("chat").classList.add("active");
+  await displayChat(username);
+  document.getElementById("user-list").style.display = "none";
+}
+
+document.addEventListener("click", async function (e) {
+  const userChatElement = e.target.closest(".user-chat");
+  if (userChatElement) {
+    const userId = userChatElement.dataset.userId;
+    const username = userChatElement.dataset.username;
+    await selectUser(username);
+    try {
+      const response = await fetch(`/messages/${userId}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+      if (response.ok) {
+        const messages = await response.json();
+        loadChat(userId, username, messages);
+      }
+    } catch (error) {
+      console.error("Error fetching chat data:", error);
+    }
   }
 });

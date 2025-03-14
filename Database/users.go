@@ -18,7 +18,7 @@ func GetUserByUsername(username string) (*structs.User, error) {
 
 func GetAllUsers(id int64) ([]structs.User, error) {
 	var users []structs.User
-	rows, err := DB.Query("SELECT u.id, u.username, u.email, u.created_at, u.status FROM users u LEFT JOIN messages m  ON u.id = m.from_user OR u.id = m.to_user GROUP BY u.id ORDER BY  COALESCE(MAX(m.created_at), '0000-00-00 00:00:00') DESC")
+	rows, err := DB.Query("SELECT u.id, u.username, u.email, u.created_at, u.status FROM users u LEFT JOIN messages m  ON u.id = m.from_user OR u.id = m.to_user GROUP BY u.id ORDER BY  COALESCE(MAX(m.created_at), '0000-00-00 00:00:00') DESC, u.username ASC")
 	if err != nil {
 		return nil, err
 	}

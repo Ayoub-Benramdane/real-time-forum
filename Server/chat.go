@@ -6,10 +6,17 @@ import (
 	structs "forum/Data"
 	database "forum/Database"
 	"net/http"
+	"strconv"
 	"sync"
 
 	"github.com/gorilla/websocket"
 )
+
+type message struct {
+	RecieverId int64  `json:"reciever_id"`
+	Content    string `json:"content"`
+	Type       string `json:"type"`
+}
 
 var Clients = make(map[int64][]*websocket.Conn)
 var Mutex sync.Mutex
@@ -17,10 +24,11 @@ var upgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool { return true },
 }
 
-func Websockethandler(w http.ResponseWriter, r *http.Request) {
+func WebsocketHandler(w http.ResponseWriter, r *http.Request) {
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		Errors(w, structs.Error{Code: http.StatusMethodNotAllowed, Message: "Method not allowed", Page: "Home", Path: "/"})
+		fmt.Println("WebSocket upgrade failed:", err)
+		http.Error(w, "Failed to upgrade connection", http.StatusBadRequest)
 		return
 	}
 	cookie, err := r.Cookie("session")
@@ -38,7 +46,7 @@ func Websockethandler(w http.ResponseWriter, r *http.Request) {
 	}
 	Mutex.Lock()
 	Clients[user.ID] = append(Clients[user.ID], conn)
-	SendWsMessage(user.ID, message{Type: "online", Content: user.Username})
+	SendWsMessage(user.ID, map[string]interface{}{"type": "online", "id": user.ID, "username": user.Username})
 	Mutex.Unlock()
 	users, err := database.GetAllUsers(user.ID)
 	if err != nil {
@@ -50,6 +58,8 @@ func Websockethandler(w http.ResponseWriter, r *http.Request) {
 			users[i].Online = true
 		}
 	}
+	defer Removeclient(conn)
+
 	conn.WriteJSON(users)
 	for {
 		var message message
@@ -59,33 +69,65 @@ func Websockethandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if message.Type == "message" {
-			Sendchat(message, message.UserId)
-			if database.SendMessage(user.ID, message.UserId, message.Content) != nil {
+			if message.Content == "" || message.RecieverId == 0 {
+				Errors(w, structs.Error{Code: http.StatusInternalServerError, Message: "Check your input", Page: "New-Post", Path: "/new-post"})
+				return
+			}
+			if database.SendMessage(user.ID, message.RecieverId, message.Content) != nil {
 				Errors(w, structs.Error{Code: http.StatusInternalServerError, Message: "Error sending message", Page: "Home", Path: "/"})
 				return
+			}
+			message1 := map[string]interface{}{
+				"type":     "message",
+				"content":  message.Content,
+				"sender":   user.ID,
+				"receiver": message.RecieverId,
+			}
+			Sendchat(message1, message.RecieverId, user.ID)
+		}
+	}
+}
+
+func Removeclient(conn *websocket.Conn) {
+	for user_id, clients := range Clients {
+		for i, client := range clients {
+			if client == conn {
+				Clients[user_id] = append(Clients[user_id][:i], Clients[user_id][i+1:]...)
+				break
 			}
 		}
 	}
 }
-func Sendchat(message message, Id int64) {
-	if _, exist := Clients[Id]; exist {
-		for i := 0; i < len(Clients[Id]); i++ {
-			Clients[Id][i].WriteJSON(message)
+
+func Sendchat(message map[string]interface{}, RecieverId int64, Sender int64) {
+	if _, exist := Clients[RecieverId]; exist {
+		for i := 0; i < len(Clients[RecieverId]); i++ {
+			if err := Clients[RecieverId][i].WriteJSON(message); err != nil {
+				fmt.Println(err)
+			}
+		}
+	}
+	if _, exist := Clients[Sender]; exist {
+		for i := 0; i < len(Clients[Sender]); i++ {
+			if err := Clients[Sender][i].WriteJSON(message); err != nil {
+				fmt.Println(err)
+			}
 		}
 	}
 }
-func SendWsMessage(user_id int64, message message) {
+
+func SendWsMessage(user_id int64, message map[string]interface{}) {
 	for usr, cons := range Clients {
 		if usr != user_id {
 			for _, con := range cons {
-				err := con.WriteJSON(message)
-				if err != nil {
-					fmt.Println("err")
+				if err := con.WriteJSON(message); err != nil {
+					fmt.Println(err)
 				}
 			}
 		}
 	}
 }
+
 func Chat(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		Errors(w, structs.Error{Code: http.StatusMethodNotAllowed, Message: "Method not allowed", Page: "Home", Path: "/"})
@@ -118,14 +160,8 @@ func Chat(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(conversations)
 }
 
-type message struct {
-	UserId  int64  `json:"userId"`
-	Content string `json:"content"`
-	Type    string `json:"type"`
-}
-
-func SendMessage(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
+func Messages(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
 		Errors(w, structs.Error{Code: http.StatusMethodNotAllowed, Message: "Method not allowed", Page: "Home", Path: "/"})
 		return
 	}
@@ -142,19 +178,17 @@ func SendMessage(w http.ResponseWriter, r *http.Request) {
 		Errors(w, structs.Error{Code: http.StatusNotFound, Message: "Page not found", Page: "Home", Path: "/"})
 		return
 	}
-	var message message
-	err = json.NewDecoder(r.Body).Decode(&message)
+	idConversation, err := strconv.ParseInt(r.URL.Path[len("/messages/"):], 10, 64)
 	if err != nil {
-		Errors(w, structs.Error{Code: http.StatusInternalServerError, Message: "Error parsing JSON", Page: "New-Post", Path: "/new-post"})
+		Errors(w, structs.Error{Code: http.StatusBadRequest, Message: "Invalid post ID", Page: "Home", Path: "/"})
 		return
 	}
-	if message.Content == "" || message.UserId == 0 {
-		Errors(w, structs.Error{Code: http.StatusInternalServerError, Message: "Check your input", Page: "New-Post", Path: "/new-post"})
+	conversation, err := database.GetConversation(user.ID, idConversation)
+	if err != nil {
+		Errors(w, structs.Error{Code: http.StatusInternalServerError, Message: "Error loading users", Page: "Home", Path: "/"})
 		return
 	}
-	if database.SendMessage(user.ID, message.UserId, message.Content) != nil {
-		Errors(w, structs.Error{Code: http.StatusInternalServerError, Message: "Error sending message", Page: "Home", Path: "/"})
-		return
-	}
+	
 	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(conversation)
 }

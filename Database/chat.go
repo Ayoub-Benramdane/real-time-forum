@@ -46,6 +46,24 @@ func Chat(user *structs.User, users []structs.User) ([]structs.Conversation, err
 	return conversations, nil
 }
 
+func GetConversation(user_id, reciever_id int64) ([]structs.Message, error) {
+	var conversation []structs.Message
+	rows, err := DB.Query(`SELECT content, created_at FROM messages WHERE (from_user = ? AND to_user = ?) OR (to_user = ? AND from_user = ?) ORDER BY created_at ASC`, user_id, reciever_id, user_id, reciever_id)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var message structs.Message
+		var date time.Time
+		if err := rows.Scan(&message.Content, &date); err != nil {
+			return nil, err
+		}
+		message.CreatedAt = TimeAgo(date)
+		conversation = append(conversation, message)
+	}
+	return conversation, nil
+}
 
 func SendMessage(from, to int64, content string) error {
 	_, err := DB.Exec("INSERT INTO messages (from_user, to_user, content, created_at) VALUES (?, ?, ?, ?)", from, to, content, time.Now())

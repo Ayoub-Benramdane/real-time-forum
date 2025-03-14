@@ -1,5 +1,6 @@
 import { loadChat } from "./chat.js";
-import { sendMessage } from "./chat.js";
+
+export let Socket = {};
 
 document.addEventListener("click", function (e) {
   const navItem = e.target.closest(".nav-item");
@@ -13,12 +14,12 @@ document.addEventListener("click", function (e) {
     if (activePanel) {
       activePanel.classList.remove("active");
     }
-
     navItem.classList.add("active");
     const panelId = navItem.dataset.panel;
     const panel = document.getElementById(panelId);
     document.getElementById(panelId).innerHTML = "";
     if (panel) {
+      document.getElementById("user-list").style.display = "block";
       panel.classList.add("active");
       offset = 0;
       switch (panelId) {
@@ -35,6 +36,7 @@ document.addEventListener("click", function (e) {
           createPost();
           break;
         case "chat":
+          document.getElementById("user-list").style.display = "none";
           displayChat();
           break;
       }
@@ -202,7 +204,7 @@ function appendPosts(posts, divPosts) {
   });
 }
 
-async function displayChat() {
+export async function displayChat(Username) {
   try {
     const response = await fetch("/chat", {
       method: "GET",
@@ -213,15 +215,15 @@ async function displayChat() {
     if (response.ok) {
       const chatData = await response.json();
       const mainContainer = document.getElementById("chat");
-      mainContainer.innerHTML = ""
-      appendChats(mainContainer, chatData);
+      mainContainer.innerHTML = "";
+      appendChats(mainContainer, chatData, Username);
     }
   } catch (error) {
     console.error("Error fetching chat data:", error);
   }
 }
 
-function appendChats(mainContainer, chatData) {
+function appendChats(mainContainer, chatData, Username) {
   const chatContainer = document.createElement("div");
   chatContainer.className = "chat-container";
 
@@ -288,7 +290,7 @@ function appendChats(mainContainer, chatData) {
 
       const userStatus = document.createElement("div");
       userStatus.className = `user-status ${
-        conversation.User.Status === "Connected" ? "online" : "offline"
+        conversation.User.online ? "online" : "offline"
       }`;
       userItem.appendChild(userStatus);
 
@@ -301,45 +303,22 @@ function appendChats(mainContainer, chatData) {
 
   const chatSection = document.createElement("div");
   chatSection.className = "chat-section";
+  chatSection.id = "chat-section";
 
   const chatHeader = document.createElement("div");
   chatHeader.className = "chat-header";
 
   const chatUserInfo = document.createElement("div");
   chatUserInfo.className = "chat-user-info";
-  chatUserInfo.innerHTML =
-    '<i class="fas fa-user-circle"></i> <span id="currentChatUser">Select a user to start chatting</span>';
+  if (Username) {
+    chatUserInfo.innerHTML = `<i class="fas fa-user-circle"></i> <span id="currentChatUser">${Username}</span>`;
+  } else {
+    chatUserInfo.innerHTML = `<i class="fas fa-user-circle"></i> <span id="currentChatUser">Select a user to start chatting
+</span>`;
+  }
+
   chatHeader.appendChild(chatUserInfo);
   chatSection.appendChild(chatHeader);
-
-  const chatMessages = document.createElement("div");
-  chatMessages.className = "chat-messages";
-  chatMessages.id = "chatMessages";
-  chatSection.appendChild(chatMessages);
-
-  const chatInput = document.createElement("div");
-  chatInput.className = "chat-input";
-
-  const messageForm = document.createElement("form");
-  messageForm.id = "messageForm";
-
-  messageForm.onsubmit = sendMessage;
-
-  const messageInput = document.createElement("input");
-  messageInput.type = "text";
-  messageInput.id = "messageInput";
-  messageInput.placeholder = "Type your message...";
-  messageInput.disabled = true;
-  messageForm.appendChild(messageInput);
-
-  const messageButton = document.createElement("button");
-  messageButton.type = "submit";
-  messageButton.disabled = true;
-  messageButton.innerHTML = '<i class="fas fa-paper-plane"></i>';
-  messageForm.appendChild(messageButton);
-
-  chatInput.appendChild(messageForm);
-  chatSection.appendChild(chatInput);
 
   chatContainer.appendChild(chatSection);
   mainContainer.appendChild(chatContainer);
@@ -441,4 +420,48 @@ function createNewPostForm(mainContainer, categories) {
   form.appendChild(buttonGroup);
 
   mainContainer.appendChild(form);
+}
+
+export function webSocket() {
+  Socket = new WebSocket("ws://localhost:8404/ws");
+
+  Socket.onopen = () => {
+    console.log("WebSocket opened");
+  };
+
+  Socket.onmessage = (e) => {
+    const data = JSON.parse(e.data);
+    const type = data.type;
+    if (type === "message") {
+      const div = document.getElementById("chatMessages");
+      const messageDiv = document.createElement("div");
+      messageDiv.className = "message sent";
+      const messageContent = document.createElement("div");
+      messageContent.className = "message-content";
+      messageContent.innerHTML = data.content;
+      messageDiv.appendChild(messageContent);
+      const messageTime = document.createElement("div");
+      messageTime.className = "message-time";
+      messageTime.innerHTML = "Just now";
+      messageDiv.appendChild(messageTime);
+      div.appendChild(messageDiv);
+      document.querySelector("#messageInput").value = "";
+      const sender = document.getElementById(`last-message-${data.sender}`);
+      const reciever = document.getElementById(`last-message-${data.receiver}`);
+      if (sender) {
+        sender.innerHTML = data.content;
+      }
+      if (reciever) {
+        reciever.innerHTML = data.content;
+      }
+    }
+  };
+
+  Socket.onclose = () => {
+    console.log("WebSocket closed");
+  };
+
+  Socket.onerror = (e) => {
+    console.error("WebSocket error:", e);
+  };
 }

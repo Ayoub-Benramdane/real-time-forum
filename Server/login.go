@@ -51,7 +51,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 	cookie := &http.Cookie{
 		Name:     "session",
 		Value:    token,
-		Expires:  time.Now().Add(5 * time.Minute),
+		Expires:  time.Now().Add(1000 * time.Minute),
 		HttpOnly: true,
 		Path:     "/",
 	}

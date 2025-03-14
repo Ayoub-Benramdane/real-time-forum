@@ -62,9 +62,6 @@ func NewPost(w http.ResponseWriter, r *http.Request) {
 		TotalComments: 0,
 		Comments:      nil,
 	}
-	cookie.Expires = time.Now().Add(5 * time.Minute)
-	cookie.Path = "/"
-	http.SetCookie(w, cookie)
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(NewPost)
 }

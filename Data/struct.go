@@ -45,13 +45,6 @@ type Category struct {
 	Name string `sqlite:"name" json:"name"`
 }
 
-type Home struct {
-	User       *User
-	Posts      []Posts
-	Categories []Category
-	Pagination []int64
-}
-
 type Message struct {
 	ID        int64  `sqlite:"id" json:"id"`
 	From      string `sqlite:"from" json:"from"`
