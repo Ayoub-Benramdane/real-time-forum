@@ -5,7 +5,7 @@ FROM golang:1.22.2-alpine
 RUN apk add --no-cache bash gcc musl-dev
 
 # Set working directory
-WORKDIR /Forum
+WORKDIR /Real_Time_Forum
 
 # Copy the application code
 COPY . .

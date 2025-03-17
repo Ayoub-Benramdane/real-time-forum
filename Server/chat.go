@@ -5,6 +5,7 @@ import (
 	"fmt"
 	structs "forum/Data"
 	database "forum/Database"
+	"html"
 	"net/http"
 	"strconv"
 	"sync"
@@ -37,30 +38,31 @@ func WebsocketHandler(w http.ResponseWriter, r *http.Request) {
 		user, err = database.GetUserConnected(cookie.Value)
 		if err != nil {
 			http.SetCookie(w, &http.Cookie{Name: "session", Value: "", MaxAge: -1})
-			Errors(w, structs.Error{Code: http.StatusNotFound, Message: "Page not found", Page: "Home", Path: "/"})
+			Errors(w, structs.Error{Code: http.StatusNotFound, Message: "Page not found"})
 			return
 		}
 	} else {
-		Errors(w, structs.Error{Code: http.StatusNotFound, Message: "Page not found", Page: "Home", Path: "/"})
+		Errors(w, structs.Error{Code: http.StatusNotFound, Message: "Page not found"})
 		return
 	}
 	Mutex.Lock()
 	Clients[user.ID] = append(Clients[user.ID], conn)
-	SendWsMessage(user.ID, map[string]interface{}{"type": "online", "id": user.ID, "username": user.Username})
-	Mutex.Unlock()
-	users, err := database.GetAllUsers(user.ID)
+	UsersLoged, err := database.GetAllUsers(user.ID)
 	if err != nil {
-		Errors(w, structs.Error{Code: http.StatusInternalServerError, Message: "Error loading users", Page: "Home", Path: "/"})
+		fmt.Println(err)
+		Errors(w, structs.Error{Code: http.StatusInternalServerError, Message: "Error loading users"})
 		return
 	}
-	for i, user := range users {
+	for i, user := range UsersLoged {
 		if _, exist := Clients[user.ID]; exist {
-			users[i].Online = true
+			UsersLoged[i].Online = true
 		}
 	}
-	defer Removeclient(conn)
+	SendWsMessage(user.ID, map[string]interface{}{"type": "online", "id": user.ID, "username": user.Username})
+	Mutex.Unlock()
 
-	conn.WriteJSON(users)
+	conn.WriteJSON(UsersLoged)
+
 	for {
 		var message message
 		err := conn.ReadJSON(&message)
@@ -70,30 +72,51 @@ func WebsocketHandler(w http.ResponseWriter, r *http.Request) {
 
 		if message.Type == "message" {
 			if message.Content == "" || message.RecieverId == 0 {
-				Errors(w, structs.Error{Code: http.StatusInternalServerError, Message: "Check your input", Page: "New-Post", Path: "/new-post"})
+				Errors(w, structs.Error{Code: http.StatusInternalServerError, Message: "Check your input"})
 				return
 			}
 			if database.SendMessage(user.ID, message.RecieverId, message.Content) != nil {
-				Errors(w, structs.Error{Code: http.StatusInternalServerError, Message: "Error sending message", Page: "Home", Path: "/"})
+				Errors(w, structs.Error{Code: http.StatusInternalServerError, Message: "Error sending message"})
 				return
 			}
 			message1 := map[string]interface{}{
 				"type":     "message",
-				"content":  message.Content,
+				"content":  html.EscapeString(message.Content),
 				"sender":   user.ID,
 				"receiver": message.RecieverId,
 			}
 			Sendchat(message1, message.RecieverId, user.ID)
 		}
 	}
+	Removeclient(conn, user.ID)
+
 }
 
-func Removeclient(conn *websocket.Conn) {
+func Removeclient(conn *websocket.Conn, user_id int64) {
 	for user_id, clients := range Clients {
 		for i, client := range clients {
 			if client == conn {
 				Clients[user_id] = append(Clients[user_id][:i], Clients[user_id][i+1:]...)
 				break
+			}
+		}
+	}
+	if len(Clients[user_id]) == 0 {
+		UserStatus(user_id, false)
+	}
+}
+
+func UserStatus(user_id int64, status bool) {
+	for _, clients := range Clients {
+		for i, client := range clients {
+			if i != int(user_id) {
+				if err := client.WriteJSON(map[string]interface{}{
+					"type":   "userstatus",
+					"id":     user_id,
+					"status": status,
+				}); err != nil {
+					fmt.Println(err)
+				}
 			}
 		}
 	}
@@ -124,45 +147,14 @@ func SendWsMessage(user_id int64, message map[string]interface{}) {
 					fmt.Println(err)
 				}
 			}
+			UserStatus(user_id, true)
 		}
 	}
-}
-
-func Chat(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		Errors(w, structs.Error{Code: http.StatusMethodNotAllowed, Message: "Method not allowed", Page: "Home", Path: "/"})
-		return
-	}
-	cookie, err := r.Cookie("session")
-	var user *structs.User
-	if err == nil {
-		user, err = database.GetUserConnected(cookie.Value)
-		if err != nil {
-			http.SetCookie(w, &http.Cookie{Name: "session", Value: "", MaxAge: -1})
-			Errors(w, structs.Error{Code: http.StatusNotFound, Message: "Page not found", Page: "Home", Path: "/"})
-			return
-		}
-	} else {
-		Errors(w, structs.Error{Code: http.StatusNotFound, Message: "Page not found", Page: "Home", Path: "/"})
-		return
-	}
-	users, err := database.GetAllUsers(user.ID)
-	if err != nil {
-		Errors(w, structs.Error{Code: http.StatusInternalServerError, Message: "Error loading users", Page: "Home", Path: "/"})
-		return
-	}
-	conversations, errChat := database.Chat(user, users)
-	if errChat != nil {
-		Errors(w, structs.Error{Code: http.StatusInternalServerError, Message: "Error loading Conversation", Page: "Home", Path: "/"})
-		return
-	}
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(conversations)
 }
 
 func Messages(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
-		Errors(w, structs.Error{Code: http.StatusMethodNotAllowed, Message: "Method not allowed", Page: "Home", Path: "/"})
+		Errors(w, structs.Error{Code: http.StatusMethodNotAllowed, Message: "Method not allowed"})
 		return
 	}
 	cookie, err := r.Cookie("session")
@@ -171,24 +163,37 @@ func Messages(w http.ResponseWriter, r *http.Request) {
 		user, err = database.GetUserConnected(cookie.Value)
 		if err != nil {
 			http.SetCookie(w, &http.Cookie{Name: "session", Value: "", MaxAge: -1})
-			Errors(w, structs.Error{Code: http.StatusNotFound, Message: "Page not found", Page: "Home", Path: "/"})
+			Errors(w, structs.Error{Code: http.StatusNotFound, Message: "Page not found"})
 			return
 		}
 	} else {
-		Errors(w, structs.Error{Code: http.StatusNotFound, Message: "Page not found", Page: "Home", Path: "/"})
+		Errors(w, structs.Error{Code: http.StatusNotFound, Message: "Page not found"})
 		return
 	}
 	idConversation, err := strconv.ParseInt(r.URL.Path[len("/messages/"):], 10, 64)
 	if err != nil {
-		Errors(w, structs.Error{Code: http.StatusBadRequest, Message: "Invalid post ID", Page: "Home", Path: "/"})
+		Errors(w, structs.Error{Code: http.StatusBadRequest, Message: "Invalid post ID"})
 		return
 	}
-	conversation, err := database.GetConversation(user.ID, idConversation)
+	userRecieved, err := database.GetUser(idConversation)
 	if err != nil {
-		Errors(w, structs.Error{Code: http.StatusInternalServerError, Message: "Error loading users", Page: "Home", Path: "/"})
+		fmt.Println(err)
+		Errors(w, structs.Error{Code: http.StatusNotFound, Message: "Invalid User"})
 		return
 	}
-	
+	limit := 10
+	offset := 0
+	if r.URL.Query().Get("limit") != "" {
+		limit, _ = strconv.Atoi(r.URL.Query().Get("limit"))
+	}
+	if r.URL.Query().Get("offset") != "" {
+		offset, _ = strconv.Atoi(r.URL.Query().Get("offset"))
+	}
+	conversation, err := database.GetConversation(user, userRecieved, limit, offset)
+	if err != nil {
+		Errors(w, structs.Error{Code: http.StatusInternalServerError, Message: "Error loading users"})
+		return
+	}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(conversation)
 }

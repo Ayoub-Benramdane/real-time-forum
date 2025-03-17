@@ -1,3 +1,5 @@
+import { showError } from "./errors.js";
+
 document.addEventListener("click", async function (e) {
   if (e.target.closest(".comment-btn")) {
     const postId = e.target
@@ -8,9 +10,14 @@ document.addEventListener("click", async function (e) {
       if (response.ok) {
         const data = await response.json();
         displayPost(data);
+      } else {
+        console.error("Failed to fetch post details");
+        const errorMessage = await response.text();
+        showError(errorMessage);
       }
     } catch (error) {
       console.error("Error fetching post details:", error);
+      showError(error)
     }
   }
 });

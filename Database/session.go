@@ -13,6 +13,12 @@ func GetUserConnected(token string) (*structs.User, error) {
 	return &user, err
 }
 
+func GetUser(id int64) (*structs.User, error) {
+	var user structs.User
+	err := DB.QueryRow("SELECT id, username, status FROM users WHERE id = ?", id).Scan(&user.ID, &user.Username, &user.Status)
+	return &user, err
+}
+
 func DeleteSession(username string) error {
 	_, err := DB.Exec("UPDATE users SET status = ?, token = ? WHERE username = ?", "Disconnected", "", username)
 	return err

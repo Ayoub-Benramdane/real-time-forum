@@ -1,3 +1,4 @@
+import { showError } from "./errors.js";
 import { fetchForumData } from "./forum_data.js";
 
 document.addEventListener("click", function (e) {
@@ -22,7 +23,6 @@ document.addEventListener("submit", async function (event) {
   if (loginForm) {
     document.getElementById("usernameError").textContent = "";
     document.getElementById("passwordError").textContent = "";
-    document.getElementById("generalError").textContent = "";
 
     const username = document.getElementById("username-login").value.trim();
     const password = document.getElementById("password-login").value.trim();
@@ -63,8 +63,8 @@ document.addEventListener("submit", async function (event) {
           "An unexpected error occurred. Please try again.";
       }
     } catch (error) {
-      document.getElementById("generalError").textContent =
-        "Unable to connect to the server. Please try again.";
+      console.error("Error fetching chat data:", error);
+      showError(error)
     }
   }
 });

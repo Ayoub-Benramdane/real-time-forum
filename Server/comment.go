@@ -2,7 +2,6 @@ package server
 
 import (
 	"encoding/json"
-	"fmt"
 	"html"
 	"net/http"
 	"strconv"
@@ -15,12 +14,12 @@ import (
 
 func CreateComment(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		Errors(w, structs.Error{Code: http.StatusMethodNotAllowed, Message: "Method not allowed", Page: "Home", Path: "/"})
+		Errors(w, structs.Error{Code: http.StatusMethodNotAllowed, Message: "Method not allowed"})
 		return
 	}
 	id_post, err := strconv.ParseInt(strings.TrimPrefix(r.URL.Path, "/comment/"), 10, 64)
 	if err != nil {
-		Errors(w, structs.Error{Code: http.StatusBadRequest, Message: "Invalid post ID", Page: "Home", Path: "/"})
+		Errors(w, structs.Error{Code: http.StatusBadRequest, Message: "Invalid post ID"})
 		return
 	}
 	cookie, err := r.Cookie("session")
@@ -29,21 +28,21 @@ func CreateComment(w http.ResponseWriter, r *http.Request) {
 		user, err = database.GetUserConnected(cookie.Value)
 		if err != nil {
 			http.SetCookie(w, &http.Cookie{Name: "session", Value: "", MaxAge: -1})
-			Errors(w, structs.Error{Code: http.StatusNotFound, Message: "Please Log in to add Comment", Page: "Home", Path: fmt.Sprintf("/post/%d", id_post)})
+			Errors(w, structs.Error{Code: http.StatusNotFound, Message: "Please Log in to add Comment"})
 			return
 		}
 	} else {
-		Errors(w, structs.Error{Code: http.StatusNotFound, Message: "Please Log in to add Comment", Page: "Home", Path: fmt.Sprintf("/post/%d", id_post)})
+		Errors(w, structs.Error{Code: http.StatusNotFound, Message: "Please Log in to add Comment"})
 		return
 	}
 	_, errLoadPost := database.GetPostByID(id_post)
 	if errLoadPost != nil {
-		Errors(w, structs.Error{Code: http.StatusNotFound, Message: "Post not found", Page: "Home", Path: "/"})
+		Errors(w, structs.Error{Code: http.StatusNotFound, Message: "Post not found"})
 		return
 	}
 	content := strings.TrimSpace(r.FormValue("content"))
 	if content == "" {
-		Errors(w, structs.Error{Code: http.StatusInternalServerError, Message: "Check your input", Page: "New-Post", Path: fmt.Sprintf("/post/%d", id_post)})
+		Errors(w, structs.Error{Code: http.StatusInternalServerError, Message: "Check your input"})
 		return
 	}
 	newComment := structs.Comment{

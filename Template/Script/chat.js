@@ -1,54 +1,57 @@
-import { Socket, displayChat } from "./panel.js";
+import { displayChat } from "./panel.js";
+let Socket = {};
 
-export function loadChat(userId, username, messages) {
+export function loadChat(userId, username, messages, isFirstLoad) {
   const chatSection = document.querySelector("#chat-section");
   let chatMessages = document.getElementById("chatMessages");
-  if (!chatMessages) {
-    const chatMessages = document.createElement("div");
-    chatMessages.className = "chat-messages";
-    chatMessages.id = "chatMessages";
-    chatSection.appendChild(chatMessages);
+  console.log(isFirstLoad);
 
-    const chatInput = document.createElement("div");
-    chatInput.className = "chat-input";
+  if (isFirstLoad) {
+    if (!chatMessages) {
+      isFirstLoad = true;
+      chatMessages = document.createElement("div");
+      chatMessages.className = "chat-messages";
+      chatMessages.id = "chatMessages";
+      chatSection.appendChild(chatMessages);
 
-    const messageForm = document.createElement("form");
-    messageForm.id = "messageForm";
+      const chatInput = document.createElement("div");
+      chatInput.className = "chat-input";
 
-    messageForm.onsubmit = sendMessage;
+      const messageForm = document.createElement("form");
+      messageForm.id = "messageForm";
 
-    const messageInput = document.createElement("input");
-    messageInput.type = "text";
-    messageInput.id = "messageInput";
-    messageInput.placeholder = "Type your message...";
-    messageForm.appendChild(messageInput);
+      messageForm.onsubmit = sendMessage;
 
-    const messageButton = document.createElement("button");
-    messageButton.type = "submit";
-    messageButton.innerHTML = '<i class="fas fa-paper-plane"></i>';
-    messageForm.appendChild(messageButton);
+      const messageInput = document.createElement("input");
+      messageInput.type = "text";
+      messageInput.id = "messageInput";
+      messageInput.placeholder = "Type your message...";
+      messageForm.appendChild(messageInput);
 
-    chatInput.appendChild(messageForm);
-    chatSection.appendChild(chatInput);
+      const messageButton = document.createElement("button");
+      messageButton.type = "submit";
+      messageButton.innerHTML = '<i class="fas fa-paper-plane"></i>';
+      messageForm.appendChild(messageButton);
+
+      chatInput.appendChild(messageForm);
+      chatSection.appendChild(chatInput);
+    }
+    chatMessages = document.getElementById("chatMessages");
+    chatMessages.dataset.userId = userId;
+    chatMessages.dataset.username = username;
+    document.getElementById("currentChatUser").textContent = username;
+    chatMessages.innerHTML = "";
   }
-
-  chatMessages = document.getElementById("chatMessages");
-  chatMessages.dataset.userId = userId;
-  chatMessages.dataset.username = username;
-
-  document.getElementById("currentChatUser").textContent = username;
-  chatMessages.innerHTML = "";
   if (messages) {
     messages.forEach((message) => {
       const messageDiv = document.createElement("div");
-      messageDiv.className = `message ${
-        message.from != username ? "sent" : "received"
-      }`;
+      messageDiv.className = `message ${message.from != username ? "sent" : "received"
+        }`;
       messageDiv.innerHTML = `
             <div class="message-content">${message.content}</div>
             <div class="message-time">${message.created_at}</div>
         `;
-      chatMessages.appendChild(messageDiv);
+      chatMessages.prepend(messageDiv);
     });
   }
 }
@@ -80,42 +83,105 @@ document.addEventListener("input", function (e) {
   }
 });
 
-async function selectUser(username) {
-  const activeNavItem = document.querySelector(".nav-item.active");
-  const activePanel = document.querySelector(".panel.active");
-
-  if (activeNavItem) {
-    activeNavItem.classList.remove("active");
-  }
-  if (activePanel) {
-    activePanel.classList.remove("active");
-  }
-  document.getElementById("chat-item").classList.add("active");
-  document.getElementById("chat").innerHTML = "";
-  document.getElementById("chat").classList.add("active");
-  await displayChat(username);
-  document.getElementById("user-list").style.display = "none";
-}
-
 document.addEventListener("click", async function (e) {
   const userChatElement = e.target.closest(".user-chat");
   if (userChatElement) {
     const userId = userChatElement.dataset.userId;
     const username = userChatElement.dataset.username;
-    await selectUser(username);
-    try {
-      const response = await fetch(`/messages/${userId}`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-      if (response.ok) {
-        const messages = await response.json();
-        loadChat(userId, username, messages);
-      }
-    } catch (error) {
-      console.error("Error fetching chat data:", error);
+    const activeNavItem = document.querySelector(".nav-item.active");
+    const activePanel = document.querySelector(".panel.active");
+
+    if (activeNavItem) {
+      activeNavItem.classList.remove("active");
     }
+    if (activePanel) {
+      activePanel.classList.remove("active");
+    }
+    document.getElementById("chat").innerHTML = "";
+    document.getElementById("chat").classList.add("active");
+    await displayChat(userId, username, 0, true);
   }
 });
+
+
+
+export function webSocket() {
+  Socket = new WebSocket("ws://localhost:8404/ws");
+
+  Socket.onopen = () => {
+    console.log("WebSocket opened");
+  };
+
+  Socket.onmessage = (e) => {
+    const data = JSON.parse(e.data);
+    if (data) {
+
+      if (Array.isArray(data)) {
+        document.querySelector(".users-content").innerHTML = renderUsers(data);
+      } else {
+        if (data.type === "message") {
+          const div = document.getElementById("chatMessages");
+          const messageDiv = document.createElement("div");
+          if (div) {
+
+            if (div.dataset.userId == data.sender) {
+              messageDiv.className = "message received";
+            } else {
+              messageDiv.className = "message sent";
+            }
+            console.log(div.dataset.userId, data.sender, data.reciever, messageDiv)
+          }
+          const messageContent = document.createElement("div");
+          messageContent.className = "message-content";
+          messageContent.innerHTML = data.content;
+          messageDiv.appendChild(messageContent);
+          const messageTime = document.createElement("div");
+          messageTime.className = "message-time";
+          messageTime.innerHTML = "Just now";
+          messageDiv.appendChild(messageTime);
+          div.appendChild(messageDiv);
+          document.querySelector("#messageInput").value = "";
+          div.scrollTop = div.scrollHeight;
+        } else if (data.type === "userstatus") {
+          const user = document.getElementById(`user-${data.id}`)
+          if (user != null && data.status === true) {
+            user.classList.remove("offline");
+            user.classList.add("online");
+          } else if (user != null) {
+            user.classList.remove("online");
+            user.classList.add("offline");
+          }
+
+        }
+      }
+    }
+  };
+
+  Socket.onclose = () => {
+    console.log("WebSocket closed");
+  };
+
+  Socket.onerror = (e) => {
+    console.error("WebSocket error:", e);
+  };
+}
+
+function renderUsers(users) {
+  if (!users || !users.length) return "<p>No users available</p>";
+
+  return users
+    .map(
+      (user) => `
+    <div class="user-item user-chat" data-user-id="${user.id}" data-username="${user.username}">
+        <div class="user-info1">
+            <div class="user-avatar">
+                <span class="username">
+                    <i class="fas fa-user-circle"></i> ${user.username}
+                </span>
+            </div>
+        </div>
+        <div id="user-${user.id}" class="user-status ${user.online ? 'online' : 'offline'}"></div>
+    </div>
+`)
+    .join("");
+}

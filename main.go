@@ -27,7 +27,6 @@ func main() {
 	http.HandleFunc("/categories", server.Categories)
 	http.HandleFunc("/all-posts", server.AllPosts)
 	http.HandleFunc("/liked-posts", server.LikedPosts)
-	http.HandleFunc("/chat", server.Chat)
 	http.HandleFunc("/messages/", server.Messages)
 	http.HandleFunc("/post/", server.Post)
 	http.HandleFunc("/new-post", server.NewPost)

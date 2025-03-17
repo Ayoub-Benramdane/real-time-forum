@@ -12,17 +12,17 @@ import (
 
 func Post(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
-		Errors(w, structs.Error{Code: http.StatusMethodNotAllowed, Message: "Method not allowed", Page: "Home", Path: "/"})
+		Errors(w, structs.Error{Code: http.StatusMethodNotAllowed, Message: "Method not allowed"})
 		return
 	}
 	id_post, err := strconv.ParseInt(strings.TrimPrefix(r.URL.Path, "/post/"), 10, 64)
 	if err != nil {
-		Errors(w, structs.Error{Code: http.StatusBadRequest, Message: "Invalid post ID", Page: "Home", Path: "/"})
+		Errors(w, structs.Error{Code: http.StatusBadRequest, Message: "Invalid post ID"})
 		return
 	}
 	post, errLoadPost := database.GetPostByID(id_post)
 	if errLoadPost != nil {
-		Errors(w, structs.Error{Code: http.StatusNotFound, Message: "Post not found", Page: "Home", Path: "/"})
+		Errors(w, structs.Error{Code: http.StatusNotFound, Message: "Post not found"})
 		return
 	}
 	cookie, err := r.Cookie("session")

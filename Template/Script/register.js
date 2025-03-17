@@ -1,3 +1,4 @@
+import { showError } from "./errors.js";
 document.addEventListener("click", async function (e) {
   if (e.target.closest("#register")) {
     const activeNavItem = document.querySelector(".nav-item.active");
@@ -20,11 +21,13 @@ document.addEventListener("submit", async function (event) {
     errors.forEach((error) => (error.textContent = ""));
 
     const username = document.getElementById("username").value.trim();
+    const firstName = document.getElementById("first_name").value.trim();
+    const lastName = document.getElementById("last_name").value.trim();
+    const age = parseInt(document.getElementById("age").value.trim(), 10);
     const email = document.getElementById("email").value.trim();
     const password = document.getElementById("password").value.trim();
-    const confirmPassword = document
-      .getElementById("confirmPassword")
-      .value.trim();
+    const confirmPassword = document.getElementById("confirmPassword").value.trim();
+    const gender = document.querySelector('input[name="gender"]:checked')?.value;
 
     let hasError = false;
 
@@ -36,11 +39,39 @@ document.addEventListener("submit", async function (event) {
       document.getElementById("usernameError").textContent =
         "Username can only contain letters, numbers, and underscores.";
       hasError = true;
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    }
+
+    if (firstName.length < 1) {
+      document.getElementById("firstNameError").textContent =
+        "First Name is required.";
+      hasError = true;
+    }
+
+    if (lastName.length < 1) {
+      document.getElementById("lastNameError").textContent =
+        "Last Name is required.";
+      hasError = true;
+    }
+
+    if (isNaN(age) || age < 13 || age > 120) {
+      document.getElementById("ageError").textContent =
+        "Age must be between 13 and 120.";
+      hasError = true;
+    }
+
+    if (!gender) {
+      document.getElementById("genderError").textContent =
+        "Gender must be selected.";
+      hasError = true;
+    }
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       document.getElementById("emailError").textContent =
         "Please enter a valid email address.";
       hasError = true;
-    } else if (password.length < 8) {
+    }
+
+    if (password.length < 8) {
       document.getElementById("passwordError").textContent =
         "Password must be at least 8 characters long.";
       hasError = true;
@@ -67,11 +98,7 @@ document.addEventListener("submit", async function (event) {
         headers: {
           "Content-Type": "application/x-www-form-urlencoded",
         },
-        body: `username=${encodeURIComponent(
-          username
-        )}&email=${encodeURIComponent(email)}&password=${encodeURIComponent(
-          password
-        )}&confirm-password=${encodeURIComponent(confirmPassword)}`,
+        body: `username=${encodeURIComponent(username)}&first_name=${encodeURIComponent(firstName)}&last_name=${encodeURIComponent(lastName)}&age=${encodeURIComponent(age)}&gender=${encodeURIComponent(gender)}&email=${encodeURIComponent(email)}&password=${encodeURIComponent(password)}&confirm-password=${encodeURIComponent(confirmPassword)}`,
       });
 
       if (response.ok) {
@@ -88,8 +115,8 @@ document.addEventListener("submit", async function (event) {
           "An unexpected error occurred. Please try again.";
       }
     } catch (error) {
-      document.getElementById("generalErrorRegister").textContent =
-        "Unable to connect to the server. Please try again.";
+      console.error("Error fetching chat data:", error);
+      showError(error)
     }
   }
 });

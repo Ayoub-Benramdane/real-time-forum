@@ -1,3 +1,5 @@
+import { showError } from "./errors.js";
+
 function updateCommentCount() {
   const commentCountSpan = document.querySelectorAll("#commentCountBtn");
   commentCountSpan.forEach((element) => {
@@ -32,6 +34,7 @@ document.addEventListener("click", async function (e) {
       }
     } else {
       alert("Failed to post comment. Please try again.");
+      showError(error)
     }
   }
 });

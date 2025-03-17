@@ -7,6 +7,10 @@ import (
 type User struct {
 	ID          int64     `sqlite:"id" json:"id"`
 	Username    string    `sqlite:"username" json:"username"`
+	FirstName   string    `sqlite:"first_name" json:"first_name"`
+	LastName    string    `sqlite:"last_name" json:"last_name"`
+	Age         int       `sqlite:"age" json:"age"`
+	Gender      string    `sqlite:"gender" json:"gender"`
 	Email       string    `sqlite:"email" json:"email"`
 	Password    string    `sqlite:"password" json:"-"`
 	CreatedAt   time.Time `sqlite:"created_at" json:"created_at"`
@@ -64,6 +68,4 @@ var PostsShowing []Posts
 type Error struct {
 	Code    int    `json:"code"`
 	Message string `json:"message"`
-	Page    string `json:"page"`
-	Path    string `json:"path"`
 }

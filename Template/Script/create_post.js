@@ -1,3 +1,5 @@
+import { showError } from "./errors.js";
+
 document.addEventListener("submit", async function (e) {
   e.preventDefault();
   const newPost = e.target.closest("#new-post");
@@ -101,14 +103,19 @@ document.addEventListener("submit", async function (e) {
           }
         } catch (error) {
           console.error("Error fetching posts:", error);
+          showError(error)
         }
         document.querySelector(".nav-item.active").classList.remove("active");
         document.getElementById("post-items").classList.add("active");
         document.querySelector(".panel.active").classList.remove("active");
         document.getElementById("all-posts").classList.add("active");
+      } else {
+        const errorMessage = await response.text();
+        showError(errorMessage);
       }
     } catch (error) {
       console.error("Error:", error);
+      showError(error)
     }
   }
 });

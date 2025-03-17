@@ -5,50 +5,9 @@ import (
 	"time"
 )
 
-func Chat(user *structs.User, users []structs.User) ([]structs.Conversation, error) {
-	var conversations []structs.Conversation
-	for i := 0; i < len(users); i++ {
-		var conversation structs.Conversation
-		conversation.User = &users[i]
-		rows, err := DB.Query(`SELECT id, from_user, to_user, content, created_at FROM messages WHERE (from_user = ? AND to_user = ?) OR (to_user = $2 AND from_user = $1) ORDER BY created_at ASC`, user.ID, users[i].ID, user.ID, users[i].ID)
-		if err != nil {
-			return nil, err
-		}
-		defer rows.Close()
-		var messages []structs.Message
-		for rows.Next() {
-			var message structs.Message
-			var from, to int64
-			var date time.Time
-			if err := rows.Scan(&message.ID, &from, &to, &message.Content, &date); err != nil {
-				return nil, err
-			}
-			if from == user.ID {
-				message.From = user.Username
-				message.To = users[i].Username
-			} else {
-				message.From = users[i].Username
-				message.To = user.Username
-			}
-			message.CreatedAt = TimeAgo(date)
-			messages = append(messages, message)
-		}
-		conversation.Messages = messages
-		if len(messages) > 0 {
-			if len(messages[len(messages)-1].Content) > 10 {
-				conversation.LastMessage = messages[len(messages)-1].Content[:10] + "..."
-			} else {
-				conversation.LastMessage = messages[len(messages)-1].Content
-			}
-		}
-		conversations = append(conversations, conversation)
-	}
-	return conversations, nil
-}
-
-func GetConversation(user_id, reciever_id int64) ([]structs.Message, error) {
+func GetConversation(user, recieved *structs.User, limit, offset int) ([]structs.Message, error) {
 	var conversation []structs.Message
-	rows, err := DB.Query(`SELECT content, created_at FROM messages WHERE (from_user = ? AND to_user = ?) OR (to_user = ? AND from_user = ?) ORDER BY created_at ASC`, user_id, reciever_id, user_id, reciever_id)
+	rows, err := DB.Query(`SELECT from_user, to_user, content, created_at FROM messages WHERE (from_user = ? AND to_user = ?) OR (to_user = ? AND from_user = ?) ORDER BY created_at DESC LIMIT ? OFFSET ?`, user.ID, recieved.ID, user.ID, recieved.ID, limit, offset)	
 	if err != nil {
 		return nil, err
 	}
@@ -56,8 +15,16 @@ func GetConversation(user_id, reciever_id int64) ([]structs.Message, error) {
 	for rows.Next() {
 		var message structs.Message
 		var date time.Time
-		if err := rows.Scan(&message.Content, &date); err != nil {
+		var from, to int64
+		if err := rows.Scan(&from, &to, &message.Content, &date); err != nil {
 			return nil, err
+		}
+		if from == user.ID{
+			message.From = user.Username
+			message.To = recieved.Username
+		} else {
+			message.From = recieved.Username
+			message.To = user.Username
 		}
 		message.CreatedAt = TimeAgo(date)
 		conversation = append(conversation, message)

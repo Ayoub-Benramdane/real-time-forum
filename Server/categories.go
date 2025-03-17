@@ -9,12 +9,12 @@ import (
 
 func Categories(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
-		Errors(w, structs.Error{Code: http.StatusMethodNotAllowed, Message: "Method not allowed", Page: "Home", Path: "/"})
+		Errors(w, structs.Error{Code: http.StatusMethodNotAllowed, Message: "Method not allowed"})
 		return
 	}
 	categories, err := database.GetAllCategories()
 	if err != nil {
-		Errors(w, structs.Error{Code: http.StatusInternalServerError, Message: "Error loading posts", Page: "Home", Path: "/"})
+		Errors(w, structs.Error{Code: http.StatusInternalServerError, Message: "Error loading posts"})
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")

@@ -1,3 +1,5 @@
+import { showError } from "./errors.js";
+
 document.addEventListener("click", async function (e) {
     if (e.target.closest(".action-btn")) {
         const action = e.target.closest(".action-btn").id.split('-')[0];
@@ -12,9 +14,14 @@ document.addEventListener("click", async function (e) {
             if (response.ok) {
                 const data = await response.json();
                 updateCountLikes(postID, data);
+            } else {
+                const errorMessage = await response.text();
+                showError(errorMessage);
+                throw new Error('Failed to update like/dislike');
             }
         } catch (error) {
             console.error('Error updating like/dislike:', error);
+            showError(error)
         }
     }
 });

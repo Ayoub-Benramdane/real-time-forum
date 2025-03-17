@@ -1,4 +1,5 @@
-import { webSocket } from "./panel.js";
+import { showError } from "./errors.js";
+import { webSocket } from "./chat.js";
 
 document.addEventListener("DOMContentLoaded", function () {
     fetchForumData();
@@ -11,14 +12,14 @@ export async function fetchForumData() {
     try {
         const response = await fetch("/forum_data");
         if (!response.ok) {
-            throw new Error("Network response was not ok");
+            const errorMessage = await response.text();
+            showError(errorMessage);
         }
-
         const data = await response.json();
-
         renderPageStructure(data);
     } catch (error) {
         console.error("Error fetching forum data:", error);
+        showError(error)
     } finally {
         if (loadingElement) loadingElement.style.display = "none";
     }
@@ -27,7 +28,7 @@ export async function fetchForumData() {
 function renderPageStructure(data) {
     const body = document.querySelector("body");
     let htmlStructure = "";
-
+    
     if (data.User && data.User.status === "Connected") {
         webSocket();
         htmlStructure = `
@@ -66,14 +67,19 @@ function renderPageStructure(data) {
                                 <i class="fas fa-plus-circle"></i>
                                 <span>Create Post</span>
                             </button>
-                            <button class="nav-item" id="chat-item" data-panel="chat">
-                                <i class="fa-solid fa-comments"></i>
-                                <span>Chat</span>
-                            </button>
                         </nav>
                         <hr>
                         <nav class="sidebar-nav" id="user-list">
-                            ${renderUsers(data.Users)}
+                            <div class="users-header">
+                                <h3><i class="fas fa-users"></i> Users</h3>
+                                <div class="search-box">
+                                    <input type="text" id="userSearch" placeholder="Search users...">
+                                    <i class="fas fa-search"></i>
+                                </div>
+                            </div>
+                            <div class="users-content">
+                                
+                            </div>
                         </nav>
                     </div>
                 </div>
@@ -115,7 +121,6 @@ function renderPageStructure(data) {
                                 Don't have an account?
                                 <button type="button" id="register">Register</button>
                             </p>
-                            <small id="generalError" class="error-message"></small>
                         </form>
                     </div>
                     
@@ -169,11 +174,10 @@ function renderPageStructure(data) {
                             <small id="confirmPasswordError" class="error-message"></small>
                             </div>
                             <button type="submit">Register</button>
-                            <p>
-                            Already have an account?
-                            <button type="button" id="login">Login</button>
+                            <p class="register">
+                                Already have an account?
+                                <button type="button" id="login">Login</button>
                             </p>
-                            <small id="generalErrorRegister" class="error-message"></small>
                         </form>
                     </div>
                 </div>
@@ -184,26 +188,6 @@ function renderPageStructure(data) {
     body.innerHTML = htmlStructure;
 }
 
-export function renderUsers(users) {
-    if (!users || !users.length) return "<p>No users available</p>";
-
-    return users
-        .map(
-            (user) => `
-        <div class="user-item user-chat" data-user-id="${user.id}" data-username="${user.username}">
-            <div class="user-info1">
-                <div class="user-avatar">
-                    <span class="username">
-                        <i class="fas fa-user-circle"></i>${user.username}
-                    </span>
-                </div>
-            </div>
-            <div class="user-status offline"></div>
-        </div>
-    `
-        )
-        .join("");
-}
 
 function renderPosts(posts) {
     if (!posts || !posts.length)

@@ -1,3 +1,5 @@
+import { showError } from "./errors.js";
+
 async function updateLikeDislikeComment(action, PostID, CommentID) {
     try {
         const response = await fetch(`/${action}/${PostID}/${CommentID}`, {
@@ -8,6 +10,8 @@ async function updateLikeDislikeComment(action, PostID, CommentID) {
         });
 
         if (!response.ok) {
+            const errorMessage = await response.text();
+            showError(errorMessage);
             throw new Error('Failed to update like/dislike');
         }
 
@@ -24,5 +28,6 @@ async function updateLikeDislikeComment(action, PostID, CommentID) {
         }
     } catch (error) {
         console.error('Error updating like/dislike:', error);
+        showError(error)
     }
 }

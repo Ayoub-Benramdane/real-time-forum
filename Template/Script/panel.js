@@ -1,6 +1,12 @@
+import { showError } from "./errors.js";
 import { loadChat } from "./chat.js";
 
-export let Socket = {};
+// Separate offset variables for each type of content
+let postsOffset = 0;
+let myPostsOffset = 0;
+let likedPostsOffset = 0;
+let chatOffset = 0;
+const limit = 10;
 
 document.addEventListener("click", function (e) {
   const navItem = e.target.closest(".nav-item");
@@ -21,23 +27,24 @@ document.addEventListener("click", function (e) {
     if (panel) {
       document.getElementById("user-list").style.display = "block";
       panel.classList.add("active");
-      offset = 0;
       switch (panelId) {
         case "all-posts":
+          // Reset offset when switching to this panel
+          postsOffset = 0;
           displayPosts();
           break;
         case "my-posts":
+          // Reset offset when switching to this panel
+          myPostsOffset = 0;
           displayMyPosts();
           break;
         case "liked-posts":
+          // Reset offset when switching to this panel
+          likedPostsOffset = 0;
           displayLikedPosts();
           break;
         case "create-post":
           createPost();
-          break;
-        case "chat":
-          document.getElementById("user-list").style.display = "none";
-          displayChat();
           break;
       }
     } else {
@@ -46,12 +53,9 @@ document.addEventListener("click", function (e) {
   }
 });
 
-let offset = 0;
-const limit = 10;
-
 export async function displayPosts() {
   try {
-    const response = await fetch(`/all-posts?limit=${limit}&offset=${offset}`, {
+    const response = await fetch(`/all-posts?limit=${limit}&offset=${postsOffset}`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -61,17 +65,24 @@ export async function displayPosts() {
       const posts = await response.json();
       const divPosts = document.getElementById("all-posts");
       appendPosts(posts, divPosts);
-      offset += limit;
+      postsOffset += limit;
+    } else {
+      console.error("Error fetching posts:", response.status);
+      showError(response.status)
     }
   } catch (error) {
     console.error("Error fetching posts:", error);
+    showError(error)
   }
 }
 
 window.addEventListener("scroll", () => {
   const { scrollTop, scrollHeight, clientHeight } = document.documentElement;
   if (scrollTop + clientHeight >= scrollHeight - 10) {
-    const panelId = document.querySelector(".panel.active").id;
+    const activePanel = document.querySelector(".panel.active");
+    if (!activePanel) return;
+
+    const panelId = activePanel.id;
     switch (panelId) {
       case "all-posts":
         displayPosts();
@@ -82,13 +93,21 @@ window.addEventListener("scroll", () => {
       case "liked-posts":
         displayLikedPosts();
         break;
+      case "chat":
+        const chatMessages = document.getElementById("chatMessages");
+        if (chatMessages) {
+          const userId = chatMessages.dataset.userId;
+          const username = chatMessages.dataset.username;
+          displayChat(userId, username, chatOffset, false);
+        }
+        break;
     }
   }
 });
 
 async function displayMyPosts() {
   try {
-    const response = await fetch(`/my-posts?limit=${limit}&offset=${offset}`, {
+    const response = await fetch(`/my-posts?limit=${limit}&offset=${myPostsOffset}`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -98,17 +117,18 @@ async function displayMyPosts() {
       const posts = await response.json();
       let divPosts = document.getElementById("my-posts");
       appendPosts(posts, divPosts);
-      offset += limit;
+      myPostsOffset += limit;
     }
   } catch (error) {
     console.error("Error fetching my posts:", error);
+    showError(error)
   }
 }
 
 async function displayLikedPosts() {
   try {
     const response = await fetch(
-      `/liked-posts?limit=${limit}&offset=${offset}`,
+      `/liked-posts?limit=${limit}&offset=${likedPostsOffset}`,
       {
         method: "GET",
         headers: {
@@ -120,16 +140,21 @@ async function displayLikedPosts() {
       const posts = await response.json();
       let divPosts = document.getElementById("liked-posts");
       appendPosts(posts, divPosts);
-      offset += limit;
+      likedPostsOffset += limit;
     }
   } catch (error) {
     console.error("Error fetching liked posts:", error);
+    showError(error)
   }
 }
 
 function appendPosts(posts, divPosts) {
   if (posts == null || posts.length === 0) {
-    if (offset === 0) {
+    const currentOffset = divPosts.id === "all-posts" ? postsOffset - limit :
+      divPosts.id === "my-posts" ? myPostsOffset - limit :
+        likedPostsOffset - limit;
+
+    if (currentOffset === 0) {
       const postDiv = document.createElement("h3");
       postDiv.style = "text-align:center";
       postDiv.innerHTML = "No Posts Available";
@@ -204,124 +229,51 @@ function appendPosts(posts, divPosts) {
   });
 }
 
-export async function displayChat(Username) {
+export async function displayChat(userId, username, newOffset, isFirstLoad) {
+  if (newOffset == 0) {
+    chatOffset = newOffset;
+  }
+  if (isFirstLoad) {
+    const mainContainer = document.getElementById("chat");
+    mainContainer.innerHTML = "";
+    const chatContainer = document.createElement("div");
+    chatContainer.className = "chat-container";
+    const chatSection = document.createElement("div");
+    chatSection.className = "chat-section";
+    chatSection.id = "chat-section";
+
+    const chatHeader = document.createElement("div");
+    chatHeader.className = "chat-header";
+
+    const chatUserInfo = document.createElement("div");
+    chatUserInfo.className = "chat-user-info";
+    chatUserInfo.innerHTML = `<i class="fas fa-user-circle"></i> <span id="currentChatUser">${username}</span>`;
+
+    chatHeader.appendChild(chatUserInfo);
+    chatSection.appendChild(chatHeader);
+
+    chatContainer.appendChild(chatSection);
+    mainContainer.appendChild(chatContainer);
+  }
   try {
-    const response = await fetch("/chat", {
+    const response = await fetch(`/messages/${userId}?limit=${limit}&offset=${chatOffset}`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
       },
     });
     if (response.ok) {
-      const chatData = await response.json();
-      const mainContainer = document.getElementById("chat");
-      mainContainer.innerHTML = "";
-      appendChats(mainContainer, chatData, Username);
+      const messages = await response.json();
+      loadChat(userId, username, messages, isFirstLoad);
+      chatOffset += limit;
+    } else {
+      console.error("Error fetching chat data:", response.statusText);
+      showError(response.statusText)
     }
   } catch (error) {
     console.error("Error fetching chat data:", error);
+    showError(error)
   }
-}
-
-function appendChats(mainContainer, chatData, Username) {
-  const chatContainer = document.createElement("div");
-  chatContainer.className = "chat-container";
-
-  const usersList = document.createElement("div");
-  usersList.className = "users-list";
-
-  const usersHeader = document.createElement("div");
-  usersHeader.className = "users-header";
-
-  const usersHeaderTitle = document.createElement("h3");
-  usersHeaderTitle.innerHTML = '<i class="fas fa-users"></i> Users';
-  usersHeader.appendChild(usersHeaderTitle);
-
-  const searchBox = document.createElement("div");
-  searchBox.className = "search-box";
-
-  const searchInput = document.createElement("input");
-  searchInput.type = "text";
-  searchInput.id = "userSearch";
-  searchInput.placeholder = "Search users...";
-  searchBox.appendChild(searchInput);
-
-  const searchIcon = document.createElement("i");
-  searchIcon.className = "fas fa-search";
-  searchBox.appendChild(searchIcon);
-
-  usersHeader.appendChild(searchBox);
-  usersList.appendChild(usersHeader);
-
-  const usersContent = document.createElement("div");
-  usersContent.className = "users-content";
-
-  if (chatData) {
-    chatData.forEach((conversation) => {
-      const userItem = document.createElement("div");
-      userItem.className = "user-item";
-      userItem.onclick = function () {
-        loadChat(
-          conversation.User.id,
-          conversation.User.username,
-          conversation.Messages
-        );
-      };
-
-      const userInfo1 = document.createElement("div");
-      userInfo1.className = "user-info1";
-
-      const userAvatar = document.createElement("div");
-      userAvatar.className = "user-avatar";
-      userAvatar.innerHTML = `<span class="username"><i class="fas fa-user-circle"></i> ${conversation.User.username}</span>`;
-      userInfo1.appendChild(userAvatar);
-
-      const lastMessageSpan = document.createElement("span");
-      lastMessageSpan.className = "last-message";
-      lastMessageSpan.id = `last-message-${conversation.User.id}`;
-      if (conversation.LastMessage !== "") {
-        lastMessageSpan.textContent = conversation.LastMessage;
-      } else {
-        lastMessageSpan.textContent = "Click to start chat";
-      }
-      userInfo1.appendChild(lastMessageSpan);
-
-      userItem.appendChild(userInfo1);
-
-      const userStatus = document.createElement("div");
-      userStatus.className = `user-status ${
-        conversation.User.online ? "online" : "offline"
-      }`;
-      userItem.appendChild(userStatus);
-
-      usersContent.appendChild(userItem);
-    });
-  }
-
-  usersList.appendChild(usersContent);
-  chatContainer.appendChild(usersList);
-
-  const chatSection = document.createElement("div");
-  chatSection.className = "chat-section";
-  chatSection.id = "chat-section";
-
-  const chatHeader = document.createElement("div");
-  chatHeader.className = "chat-header";
-
-  const chatUserInfo = document.createElement("div");
-  chatUserInfo.className = "chat-user-info";
-  if (Username) {
-    chatUserInfo.innerHTML = `<i class="fas fa-user-circle"></i> <span id="currentChatUser">${Username}</span>`;
-  } else {
-    chatUserInfo.innerHTML = `<i class="fas fa-user-circle"></i> <span id="currentChatUser">Select a user to start chatting
-</span>`;
-  }
-
-  chatHeader.appendChild(chatUserInfo);
-  chatSection.appendChild(chatHeader);
-
-  chatContainer.appendChild(chatSection);
-  mainContainer.appendChild(chatContainer);
 }
 
 async function createPost() {
@@ -338,7 +290,8 @@ async function createPost() {
       createNewPostForm(mainContainer, categories);
     }
   } catch (error) {
-    console.error("Error fetching chat data:", error);
+    console.error("Error fetching categories:", error);
+    showError(error)
   }
 }
 
@@ -420,48 +373,4 @@ function createNewPostForm(mainContainer, categories) {
   form.appendChild(buttonGroup);
 
   mainContainer.appendChild(form);
-}
-
-export function webSocket() {
-  Socket = new WebSocket("ws://localhost:8404/ws");
-
-  Socket.onopen = () => {
-    console.log("WebSocket opened");
-  };
-
-  Socket.onmessage = (e) => {
-    const data = JSON.parse(e.data);
-    const type = data.type;
-    if (type === "message") {
-      const div = document.getElementById("chatMessages");
-      const messageDiv = document.createElement("div");
-      messageDiv.className = "message sent";
-      const messageContent = document.createElement("div");
-      messageContent.className = "message-content";
-      messageContent.innerHTML = data.content;
-      messageDiv.appendChild(messageContent);
-      const messageTime = document.createElement("div");
-      messageTime.className = "message-time";
-      messageTime.innerHTML = "Just now";
-      messageDiv.appendChild(messageTime);
-      div.appendChild(messageDiv);
-      document.querySelector("#messageInput").value = "";
-      const sender = document.getElementById(`last-message-${data.sender}`);
-      const reciever = document.getElementById(`last-message-${data.receiver}`);
-      if (sender) {
-        sender.innerHTML = data.content;
-      }
-      if (reciever) {
-        reciever.innerHTML = data.content;
-      }
-    }
-  };
-
-  Socket.onclose = () => {
-    console.log("WebSocket closed");
-  };
-
-  Socket.onerror = (e) => {
-    console.error("WebSocket error:", e);
-  };
 }
