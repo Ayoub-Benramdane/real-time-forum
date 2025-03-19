@@ -4,8 +4,6 @@ let Socket = {};
 export function loadChat(userId, username, messages, isFirstLoad) {
   const chatSection = document.querySelector("#chat-section");
   let chatMessages = document.getElementById("chatMessages");
-  console.log(isFirstLoad);
-
   if (isFirstLoad) {
     if (!chatMessages) {
       isFirstLoad = true;
@@ -84,7 +82,7 @@ document.addEventListener("input", function (e) {
 });
 
 document.addEventListener("click", async function (e) {
-  const userChatElement = e.target.closest(".user-chat");
+  const userChatElement = e.target.closest(".user-item");
   if (userChatElement) {
     const userId = userChatElement.dataset.userId;
     const username = userChatElement.dataset.username;
@@ -123,25 +121,32 @@ export function webSocket() {
           const div = document.getElementById("chatMessages");
           const messageDiv = document.createElement("div");
           if (div) {
-
             if (div.dataset.userId == data.sender) {
               messageDiv.className = "message received";
             } else {
               messageDiv.className = "message sent";
             }
-            console.log(div.dataset.userId, data.sender, data.reciever, messageDiv)
+            const messageContent = document.createElement("div");
+            messageContent.className = "message-content";
+            messageContent.innerHTML = data.content;
+            messageDiv.appendChild(messageContent);
+            const messageTime = document.createElement("div");
+            messageTime.className = "message-time";
+            messageTime.innerHTML = "Just now";
+            messageDiv.appendChild(messageTime);
+            div.appendChild(messageDiv);
+            document.querySelector("#messageInput").value = "";
+            div.scrollTop = div.scrollHeight;
           }
-          const messageContent = document.createElement("div");
-          messageContent.className = "message-content";
-          messageContent.innerHTML = data.content;
-          messageDiv.appendChild(messageContent);
-          const messageTime = document.createElement("div");
-          messageTime.className = "message-time";
-          messageTime.innerHTML = "Just now";
-          messageDiv.appendChild(messageTime);
-          div.appendChild(messageDiv);
-          document.querySelector("#messageInput").value = "";
-          div.scrollTop = div.scrollHeight;
+
+          document.querySelectorAll(".user-item").forEach((userItem) => {
+            const newUser = userItem;
+            const userId = userItem.dataset.userId;
+            if (userId == data.receiver || userId == data.sender) {
+              userItem.remove();
+              document.querySelector(".users-content").prepend(newUser);
+            }
+          })
         } else if (data.type === "userstatus") {
           const user = document.getElementById(`user-${data.id}`)
           if (user != null && data.status === true) {
@@ -151,7 +156,6 @@ export function webSocket() {
             user.classList.remove("online");
             user.classList.add("offline");
           }
-
         }
       }
     }
@@ -172,7 +176,7 @@ function renderUsers(users) {
   return users
     .map(
       (user) => `
-    <div class="user-item user-chat" data-user-id="${user.id}" data-username="${user.username}">
+    <div class="user-item" data-user-id="${user.id}" data-username="${user.username}">
         <div class="user-info1">
             <div class="user-avatar">
                 <span class="username">

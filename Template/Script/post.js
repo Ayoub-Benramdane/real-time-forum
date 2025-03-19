@@ -1,4 +1,5 @@
 import { showError } from "./errors.js";
+import { updateLikeDislikeComment } from "./likes_comments.js";
 
 document.addEventListener("click", async function (e) {
   if (e.target.closest(".comment-btn")) {

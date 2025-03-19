@@ -1,6 +1,6 @@
 import { showError } from "./errors.js";
 
-async function updateLikeDislikeComment(action, PostID, CommentID) {
+export async function updateLikeDislikeComment(action, PostID, CommentID) {
     try {
         const response = await fetch(`/${action}/${PostID}/${CommentID}`, {
             method: 'POST',
