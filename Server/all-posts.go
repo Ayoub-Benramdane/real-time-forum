@@ -2,7 +2,6 @@ package server
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"strconv"
 
@@ -40,7 +39,6 @@ func AllPosts(w http.ResponseWriter, r *http.Request) {
 		Errors(w, structs.Error{Code: http.StatusInternalServerError, Message: "Error loading posts"})
 		return
 	}
-	fmt.Println(posts)
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(posts)
 }

@@ -44,9 +44,9 @@ export function loadChat(userId, username, messages, isFirstLoad) {
     messages.forEach((message) => {
       const messageDiv = document.createElement("div");
       messageDiv.className = `message ${message.from != username ? "sent" : "received"
-        }`;
+        }`;        
       messageDiv.innerHTML = `
-          <div class="message-time">${message.from != username ? message.sender_username : message.receiver_username}</div>
+          <div class="message-time">${messageDiv.className == "sent" ? message.to : message.from}</div>
           <div class="message-content">${message.content}</div>
           <div class="message-time">${message.created_at}</div>
         `;

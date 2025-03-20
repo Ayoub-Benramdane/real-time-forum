@@ -223,8 +223,6 @@ function appendPosts(posts, divPosts, scrol) {
 
     postDiv.appendChild(postActions);
     divPosts.append(postDiv);
-    console.log(divPosts);
-    console.log(postDiv);
     
   });
 }

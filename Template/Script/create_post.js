@@ -34,7 +34,7 @@ document.addEventListener("submit", async function (e) {
         if (activePanel) {
           activePanel.classList.remove("active");
         }
-        document.getElementById("post-items").classList.add("active");
+        document.getElementById("all-posts").classList.add("active");
         document.getElementById("post-items").classList.add("active");
         await displayPosts(0, false);
       } else {
