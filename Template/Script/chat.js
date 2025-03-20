@@ -46,8 +46,9 @@ export function loadChat(userId, username, messages, isFirstLoad) {
       messageDiv.className = `message ${message.from != username ? "sent" : "received"
         }`;
       messageDiv.innerHTML = `
-            <div class="message-content">${message.content}</div>
-            <div class="message-time">${message.created_at}</div>
+          <div class="message-time">${message.from != username ? message.sender_username : message.receiver_username}</div>
+          <div class="message-content">${message.content}</div>
+          <div class="message-time">${message.created_at}</div>
         `;
       chatMessages.prepend(messageDiv);
     });
@@ -58,14 +59,23 @@ export async function sendMessage(event) {
   event.preventDefault();
   const chatMessages = document.getElementById("chatMessages");
   const userId = chatMessages.dataset.userId;
+  const receiver = chatMessages.dataset.username;
+  const sender = document.getElementById("sender-name").innerText
   const content = document.getElementById("messageInput").value.trim();
+  if (content.length > 20) {
+    alert("Ktb gher chwia")
+    return
+  }
   const message = {
     reciever_id: parseInt(userId, 10),
+    receiver_username : receiver,
+    sender_username : sender,
     content: content,
     type: "message",
   };
+  
   if (message.content) {
-    Socket.send(JSON.stringify(message));
+    Socket.send(JSON.stringify(message));    
   }
 }
 
@@ -110,7 +120,7 @@ export function webSocket() {
     console.log("WebSocket opened");
   };
 
-  Socket.onmessage = (e) => {
+  Socket.onmessage = (e) => {    
     const data = JSON.parse(e.data);
     if (data) {
 
@@ -121,11 +131,10 @@ export function webSocket() {
           const div = document.getElementById("chatMessages");
           const messageDiv = document.createElement("div");
           if (div) {
-            if (div.dataset.userId == data.sender) {
-              messageDiv.className = "message received";
-            } else {
-              messageDiv.className = "message sent";
-            }
+            const username = document.createElement("div");
+            username.className = "message-time";
+            username.innerHTML = data.sender_username;
+            messageDiv.appendChild(username);
             const messageContent = document.createElement("div");
             messageContent.className = "message-content";
             messageContent.innerHTML = data.content;
@@ -134,6 +143,11 @@ export function webSocket() {
             messageTime.className = "message-time";
             messageTime.innerHTML = "Just now";
             messageDiv.appendChild(messageTime);
+            if (div.dataset.userId == data.sender) {
+              messageDiv.className = "message received";
+            } else {
+              messageDiv.className = "message sent";
+            }
             div.appendChild(messageDiv);
             document.querySelector("#messageInput").value = "";
             div.scrollTop = div.scrollHeight;

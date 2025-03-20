@@ -1,7 +1,6 @@
 import { showError } from "./errors.js";
 import { loadChat } from "./chat.js";
 
-// Separate offset variables for each type of content
 let postsOffset = 0;
 let myPostsOffset = 0;
 let likedPostsOffset = 0;
@@ -25,21 +24,17 @@ document.addEventListener("click", function (e) {
     const panel = document.getElementById(panelId);
     document.getElementById(panelId).innerHTML = "";
     if (panel) {
-      document.getElementById("user-list").style.display = "block";
       panel.classList.add("active");
       switch (panelId) {
         case "all-posts":
-          // Reset offset when switching to this panel
           postsOffset = 0;
           displayPosts();
           break;
         case "my-posts":
-          // Reset offset when switching to this panel
           myPostsOffset = 0;
           displayMyPosts();
           break;
         case "liked-posts":
-          // Reset offset when switching to this panel
           likedPostsOffset = 0;
           displayLikedPosts();
           break;
@@ -53,7 +48,10 @@ document.addEventListener("click", function (e) {
   }
 });
 
-export async function displayPosts() {
+export async function displayPosts(offset, scrol) {
+  if (offset != null) {
+    postsOffset = 0
+  }
   try {
     const response = await fetch(`/all-posts?limit=${limit}&offset=${postsOffset}`, {
       method: "GET",
@@ -62,9 +60,9 @@ export async function displayPosts() {
       },
     });
     if (response.ok) {
-      const posts = await response.json();
+      const posts = await response.json();      
       const divPosts = document.getElementById("all-posts");
-      appendPosts(posts, divPosts);
+      appendPosts(posts, divPosts, scrol);
       postsOffset += limit;
     } else {
       console.error("Error fetching posts:", response.status);
@@ -81,17 +79,17 @@ window.addEventListener("scroll", () => {
   if (scrollTop + clientHeight >= scrollHeight - 10) {
     const activePanel = document.querySelector(".panel.active");
     if (!activePanel) return;
-
+    let scrol = true
     const panelId = activePanel.id;
     switch (panelId) {
       case "all-posts":
-        displayPosts();
+        displayPosts(null, scrol);
         break;
       case "my-posts":
-        displayMyPosts();
+        displayMyPosts(scrol);
         break;
       case "liked-posts":
-        displayLikedPosts();
+        displayLikedPosts(scrol);
         break;
       case "chat":
         const chatMessages = document.getElementById("chatMessages");
@@ -105,7 +103,7 @@ window.addEventListener("scroll", () => {
   }
 });
 
-async function displayMyPosts() {
+async function displayMyPosts(scrol) {
   try {
     const response = await fetch(`/my-posts?limit=${limit}&offset=${myPostsOffset}`, {
       method: "GET",
@@ -116,7 +114,7 @@ async function displayMyPosts() {
     if (response.ok) {
       const posts = await response.json();
       let divPosts = document.getElementById("my-posts");
-      appendPosts(posts, divPosts);
+      appendPosts(posts, divPosts, scrol);
       myPostsOffset += limit;
     }
   } catch (error) {
@@ -125,7 +123,7 @@ async function displayMyPosts() {
   }
 }
 
-async function displayLikedPosts() {
+async function displayLikedPosts(scrol) {
   try {
     const response = await fetch(
       `/liked-posts?limit=${limit}&offset=${likedPostsOffset}`,
@@ -139,7 +137,7 @@ async function displayLikedPosts() {
     if (response.ok) {
       const posts = await response.json();
       let divPosts = document.getElementById("liked-posts");
-      appendPosts(posts, divPosts);
+      appendPosts(posts, divPosts, scrol);
       likedPostsOffset += limit;
     }
   } catch (error) {
@@ -148,13 +146,12 @@ async function displayLikedPosts() {
   }
 }
 
-function appendPosts(posts, divPosts) {
+function appendPosts(posts, divPosts, scrol) {
   if (posts == null || posts.length === 0) {
     const currentOffset = divPosts.id === "all-posts" ? postsOffset - limit :
       divPosts.id === "my-posts" ? myPostsOffset - limit :
         likedPostsOffset - limit;
-
-    if (currentOffset === 0) {
+    if (currentOffset <= 0 && !scrol) {
       const postDiv = document.createElement("h3");
       postDiv.style = "text-align:center";
       postDiv.innerHTML = "No Posts Available";
@@ -226,6 +223,9 @@ function appendPosts(posts, divPosts) {
 
     postDiv.appendChild(postActions);
     divPosts.append(postDiv);
+    console.log(divPosts);
+    console.log(postDiv);
+    
   });
 }
 

@@ -105,13 +105,13 @@ document.addEventListener("submit", async function (event) {
         document.getElementById("register-panel").classList.remove("active");
         document.getElementById("login-panel").classList.add("active");
       } else if (response.status === 409) {
-        document.getElementById("generalErrorRegister").textContent =
+        document.getElementById("confirmPasswordError").textContent =
           "Username or email is already taken.";
       } else if (response.status === 400) {
-        document.getElementById("generalErrorRegister").textContent =
+        document.getElementById("confirmPasswordError").textContent =
           "Invalid input. Please correct errors.";
       } else {
-        document.getElementById("generalErrorRegister").textContent =
+        document.getElementById("confirmPasswordError").textContent =
           "An unexpected error occurred. Please try again.";
       }
     } catch (error) {

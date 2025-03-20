@@ -1,7 +1,12 @@
 import { showError } from "./errors.js";
 import { webSocket } from "./chat.js";
+import { displayPosts } from "./panel.js"
 
 document.addEventListener("DOMContentLoaded", function () {
+    if (location.pathname != "/") {
+        showError(404, "page not found");
+        return
+    }
     fetchForumData();
 });
 
@@ -25,9 +30,9 @@ export async function fetchForumData() {
     }
 }
 
-function renderPageStructure(data) {
+async function renderPageStructure(data) {
     const body = document.querySelector("body");
-    let htmlStructure = "";
+    let htmlStructure = "";    
     
     if (data.User && data.User.status === "Connected") {
         webSocket();
@@ -35,7 +40,7 @@ function renderPageStructure(data) {
             <!-- Navbar -->
             <nav class="navbar">
                 <div class="user-info">
-                    <button class="log-btn">
+                    <button id="sender-name" class="log-btn">
                         <i class="fa-solid fa-user"></i> ${data.User.username}
                     </button>
                     <button class="log-btn" id="logout">Logout</button>
@@ -86,11 +91,7 @@ function renderPageStructure(data) {
                 
                 <!-- Main Content -->
                 <div class="main-content">
-                    <div class="panel active" id="all-posts">
-                        ${renderPosts(data.Posts)}
-                        <div id="loading" style="display: none;">Loading more posts...</div>
-                    </div>
-                    
+                    <div class="panel active" id="all-posts"></div>
                     <div class="panel" id="my-posts"></div>
                     <div class="panel" id="liked-posts"></div>
                     <div class="panel" id="post-comment"></div>
@@ -186,54 +187,5 @@ function renderPageStructure(data) {
     }
 
     body.innerHTML = htmlStructure;
-}
-
-
-function renderPosts(posts) {
-    if (!posts || !posts.length)
-        return '<h3 style="text-align: center">No Posts Available</h3>';
-
-    return posts
-        .map(
-            (post) => `
-        <div id="post" class="post">
-            <div class="post-header">
-                <div class="user-avatar">
-                    <i class="fas fa-user-circle"></i>
-                    <span class="post-author">${post.author}</span>
-                </div>
-                <span class="post-date">${post.created_at}</span>
-            </div>
-            <h3 class="post-title">${post.title}</h3>
-            <p class="post-content">${post.content}</p>
-            <div class="category-tags">
-                ${post.categories
-                    ? post.categories
-                        .map(
-                            (cat) => `<span class="category-tag">#${cat}</span>`
-                        )
-                        .join("")
-                    : ""
-                }
-            </div>
-            <div class="post-actions">
-                <button id="like-btn-${post.id}" class="action-btn">
-                    <i class="fas fa-thumbs-up"></i>
-                    <span id="like-count-${post.id}">${post.total_likes}</span>
-                </button>
-                <button id="dislike-btn-${post.id}" class="action-btn">
-                    <i class="fas fa-thumbs-down"></i>
-                    <span id="dislike-count-${post.id}">${post.total_dislikes
-                }</span>
-                </button>
-                <button class="comment-btn" id="show-post-${post.id}">
-                    <i class="fas fa-comment"></i>
-                    <span id="commentCountBtn">${post.total_comments
-                }</span> Comments
-                </button>
-            </div>
-        </div>
-    `
-        )
-        .join("");
+    if (data.User && data.User.status === "Connected") await displayPosts()
 }

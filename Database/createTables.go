@@ -109,6 +109,8 @@ func CreateTables() error {
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
 			from_user INTEGER NOT NULL,
 			to_user INTEGER NOT NULL,
+			from_username TEXT NOT NULL,
+			to_username TEXT NOT NULL,
 			content TEXT NOT NULL,
 			created_at DATETIME NOT NULL,
 			FOREIGN KEY (from_user) REFERENCES users(id) ON DELETE CASCADE,

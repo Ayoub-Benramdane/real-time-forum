@@ -14,7 +14,8 @@ document.addEventListener("click", async function (e) {
         fetchForumData();
       } else {
         console.error("Logout failed");
-        showError(error)
+        const errorMessage = await response.text();
+        showError(errorMessage)
       }
     } catch (error) {
       console.error("Error logging out:", error);

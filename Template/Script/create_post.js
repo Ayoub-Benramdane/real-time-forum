@@ -1,5 +1,5 @@
 import { showError } from "./errors.js";
-import { fetchForumData } from "./forum_data.js";
+import { displayPosts } from "./panel.js";
 
 document.addEventListener("submit", async function (e) {
   e.preventDefault();
@@ -26,7 +26,17 @@ document.addEventListener("submit", async function (e) {
       });
 
       if (response.ok) {
-        fetchForumData();
+        const activeNavItem = document.querySelector(".nav-item.active");
+        const activePanel = document.querySelector(".panel.active");
+        if (activeNavItem) {
+          activeNavItem.classList.remove("active");
+        }
+        if (activePanel) {
+          activePanel.classList.remove("active");
+        }
+        document.getElementById("post-items").classList.add("active");
+        document.getElementById("post-items").classList.add("active");
+        await displayPosts(0, false);
       } else {
         const errorMessage = await response.text();
         showError(errorMessage);

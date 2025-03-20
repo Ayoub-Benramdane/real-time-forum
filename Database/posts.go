@@ -32,48 +32,48 @@ func CreatePost(title, content string, categories []string, userID int64) (int64
 }
 
 func GetPosts(limit, offset int) ([]structs.Posts, error) {
-    rows, err := DB.Query("SELECT p.id, p.title, p.user_id, p.content, p.created_at, u.username FROM posts p JOIN users u ON p.user_id = u.id ORDER BY p.created_at DESC LIMIT ? OFFSET ?", limit, offset)
-    if err != nil {
-        return nil, err
-    }
-    defer rows.Close()
-    var posts []structs.Posts
-    for rows.Next() {
-        var post structs.Posts
-        var date time.Time
-        if err := rows.Scan(&post.ID, &post.Title, &post.UserID, &post.Content, &date, &post.Author); err != nil {
-            return nil, err
-        }
-        post.CreatedAt = TimeAgo(date)
-        post.TotalLikes, err = CountLikes(post.ID)
-        if err != nil {
-            return nil, err
-        }
-        post.TotalDislikes, err = CountDislikes(post.ID)
-        if err != nil {
-            return nil, err
-        }
-        post.TotalComments, err = CountComments(post.ID)
-        if err != nil {
-            return nil, err
-        }
-        post.Categories, err = GetCategories(post.ID)
-        if err != nil {
-            return nil, err
-        }
-        comments, errLoadComment := GetAllComments(post.ID)
-        if errLoadComment != nil {
-            return nil, errLoadComment
-        }
-        post.Comments = comments
-        posts = append(posts, post)
-    }
-    *Posts = posts
-    return posts, nil
+	rows, err := DB.Query("SELECT p.id, p.title, p.user_id, p.content, p.created_at, u.username FROM posts p JOIN users u ON p.user_id = u.id ORDER BY p.created_at DESC LIMIT ? OFFSET ?", limit, offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var posts []structs.Posts
+	for rows.Next() {
+		var post structs.Posts
+		var date time.Time
+		if err := rows.Scan(&post.ID, &post.Title, &post.UserID, &post.Content, &date, &post.Author); err != nil {
+			return nil, err
+		}
+		post.CreatedAt = TimeAgo(date)
+		post.TotalLikes, err = CountLikes(post.ID)
+		if err != nil {
+			return nil, err
+		}
+		post.TotalDislikes, err = CountDislikes(post.ID)
+		if err != nil {
+			return nil, err
+		}
+		post.TotalComments, err = CountComments(post.ID)
+		if err != nil {
+			return nil, err
+		}
+		post.Categories, err = GetCategories(post.ID)
+		if err != nil {
+			return nil, err
+		}
+		comments, errLoadComment := GetAllComments(post.ID)
+		if errLoadComment != nil {
+			return nil, errLoadComment
+		}
+		post.Comments = comments
+		posts = append(posts, post)
+	}
+	*Posts = posts
+	return posts, nil
 }
 
 func GetMyPosts(id int64, limit, offset int) ([]structs.Posts, error) {
-	rows, err := DB.Query("SELECT p.id, p.title, p.user_id, p.content, p.created_at, u.username FROM posts p JOIN users u ON p.user_id = u.id WHERE p.user_id = ? ORDER BY p.created_at DESC LIMIT ? OFFSET ?",id, limit, offset)
+	rows, err := DB.Query("SELECT p.id, p.title, p.user_id, p.content, p.created_at, u.username FROM posts p JOIN users u ON p.user_id = u.id WHERE p.user_id = ? ORDER BY p.created_at DESC LIMIT ? OFFSET ?", id, limit, offset)
 	if err != nil {
 		return nil, err
 	}
@@ -114,7 +114,7 @@ func GetMyPosts(id int64, limit, offset int) ([]structs.Posts, error) {
 }
 
 func GetMyLikes(id int64, limit, offset int) ([]structs.Posts, error) {
-	rows, err := DB.Query("SELECT p.id, p.title, p.user_id, p.content, p.created_at, u.username FROM posts p JOIN users u ON p.user_id = u.id JOIN post_reactions pr ON pr.post_id = p.id WHERE pr.user_id = ? ORDER BY p.created_at DESC LIMIT ? OFFSET ?",id, limit, offset)
+	rows, err := DB.Query("SELECT p.id, p.title, p.user_id, p.content, p.created_at, u.username FROM posts p JOIN users u ON p.user_id = u.id JOIN post_reactions pr ON pr.post_id = p.id WHERE pr.user_id = ? ORDER BY p.created_at DESC LIMIT ? OFFSET ?", id, limit, offset)
 	if err != nil {
 		return nil, err
 	}

@@ -2,10 +2,12 @@ package server
 
 import (
 	"encoding/json"
-	structs "forum/Data"
-	database "forum/Database"
+	"fmt"
 	"net/http"
 	"strconv"
+
+	structs "forum/Data"
+	database "forum/Database"
 )
 
 func AllPosts(w http.ResponseWriter, r *http.Request) {
@@ -38,6 +40,7 @@ func AllPosts(w http.ResponseWriter, r *http.Request) {
 		Errors(w, structs.Error{Code: http.StatusInternalServerError, Message: "Error loading posts"})
 		return
 	}
+	fmt.Println(posts)
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(posts)
 }

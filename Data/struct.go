@@ -50,11 +50,13 @@ type Category struct {
 }
 
 type Message struct {
-	ID        int64  `sqlite:"id" json:"id"`
-	From      string `sqlite:"from" json:"from"`
-	To        string `sqlite:"to" json:"to"`
-	Content   string `sqlite:"content" json:"content"`
-	CreatedAt string `sqlite:"created_at" json:"created_at"`
+	ID           int64  `sqlite:"id" json:"id"`
+	From         string `sqlite:"from" json:"from"`
+	To           string `sqlite:"to" json:"to"`
+	FromUsername string `sqlite:"from_username" json:"from_username"`
+	ToUsername   string `sqlite:"to_username" json:"to_username"`
+	Content      string `sqlite:"content" json:"content"`
+	CreatedAt    string `sqlite:"created_at" json:"created_at"`
 }
 
 type Conversation struct {

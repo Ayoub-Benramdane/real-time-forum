@@ -3,27 +3,32 @@ package server
 import (
 	"encoding/json"
 	"fmt"
-	structs "forum/Data"
-	database "forum/Database"
 	"html"
 	"net/http"
 	"strconv"
 	"sync"
 
+	structs "forum/Data"
+	database "forum/Database"
+
 	"github.com/gorilla/websocket"
 )
 
 type message struct {
-	RecieverId int64  `json:"reciever_id"`
-	Content    string `json:"content"`
-	Type       string `json:"type"`
+	RecieverId       int64  `json:"reciever_id"`
+	RecieverUsername string `json:"receiver_username"`
+	SenderUsername   string `json:"sender_username"`
+	Content          string `json:"content"`
+	Type             string `json:"type"`
 }
 
-var Clients = make(map[int64][]*websocket.Conn)
-var Mutex sync.Mutex
-var upgrader = websocket.Upgrader{
-	CheckOrigin: func(r *http.Request) bool { return true },
-}
+var (
+	Clients  = make(map[int64][]*websocket.Conn)
+	Mutex    sync.Mutex
+	upgrader = websocket.Upgrader{
+		CheckOrigin: func(r *http.Request) bool { return true },
+	}
+)
 
 func WebsocketHandler(w http.ResponseWriter, r *http.Request) {
 	conn, err := upgrader.Upgrade(w, r, nil)
@@ -49,7 +54,6 @@ func WebsocketHandler(w http.ResponseWriter, r *http.Request) {
 	Clients[user.ID] = append(Clients[user.ID], conn)
 	UsersLoged, err := database.GetAllUsers(user.ID)
 	if err != nil {
-		fmt.Println(err)
 		Errors(w, structs.Error{Code: http.StatusInternalServerError, Message: "Error loading users"})
 		return
 	}
@@ -69,27 +73,32 @@ func WebsocketHandler(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			break
 		}
-
 		if message.Type == "message" {
 			if message.Content == "" || message.RecieverId == 0 {
 				Errors(w, structs.Error{Code: http.StatusInternalServerError, Message: "Check your input"})
 				return
 			}
-			if database.SendMessage(user.ID, message.RecieverId, message.Content) != nil {
+			reciever, err:= database.GetUser(message.RecieverId)
+			if err != nil {
+				Errors(w, structs.Error{Code: http.StatusNotFound, Message: "User not found"})
+				return
+			}
+			if database.SendMessage(user, reciever, message.Content) != nil {
 				Errors(w, structs.Error{Code: http.StatusInternalServerError, Message: "Error sending message"})
 				return
 			}
 			message1 := map[string]interface{}{
-				"type":     "message",
-				"content":  html.EscapeString(message.Content),
-				"sender":   user.ID,
-				"receiver": message.RecieverId,
+				"type":              "message",
+				"content":           html.EscapeString(message.Content),
+				"sender":            user.ID,
+				"receiver":          message.RecieverId,
+				"sender_username":   message.SenderUsername,
+				"receiver_username": message.RecieverUsername,
 			}
 			Sendchat(message1, message.RecieverId, user.ID)
 		}
 	}
 	Removeclient(conn, user.ID)
-
 }
 
 func Removeclient(conn *websocket.Conn, user_id int64) {

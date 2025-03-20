@@ -933,8 +933,8 @@ button:hover {
 /* Error Message Styles */
 .error-message {
   color: #ff6b6b;
-  font-size: 0.85rem;
-  margin-top: 0.3rem;
+  font-size: 1.85rem;
+  margin-top: 1rem;
   display: block;
 }
 
