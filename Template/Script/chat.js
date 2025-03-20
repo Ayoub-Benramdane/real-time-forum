@@ -1,7 +1,18 @@
 import { displayChat } from "./panel.js";
 let Socket = {};
 
-export function loadChat(userId, username, messages, isFirstLoad) {
+export async function loadChat(userId, username, messages, isFirstLoad) {
+  try {
+    const response = await fetch(`/read/${userId}`);
+    if (!response.ok) {
+      console.error("Failed to fetch post details");
+      const errorMessage = await response.text();
+      showError(errorMessage);
+    }
+  } catch (error) {
+    console.error("Error fetching post details:", error);
+    showError(error)
+  }
   const chatSection = document.querySelector("#chat-section");
   let chatMessages = document.getElementById("chatMessages");
   if (isFirstLoad) {
@@ -44,7 +55,7 @@ export function loadChat(userId, username, messages, isFirstLoad) {
     messages.forEach((message) => {
       const messageDiv = document.createElement("div");
       messageDiv.className = `message ${message.from != username ? "sent" : "received"
-        }`;        
+        }`;
       messageDiv.innerHTML = `
           <div class="message-time">${messageDiv.className == "sent" ? message.to : message.from}</div>
           <div class="message-content">${message.content}</div>
@@ -68,14 +79,14 @@ export async function sendMessage(event) {
   }
   const message = {
     reciever_id: parseInt(userId, 10),
-    receiver_username : receiver,
-    sender_username : sender,
+    receiver_username: receiver,
+    sender_username: sender,
     content: content,
     type: "message",
   };
-  
+
   if (message.content) {
-    Socket.send(JSON.stringify(message));    
+    Socket.send(JSON.stringify(message));
   }
 }
 
@@ -120,7 +131,7 @@ export function webSocket() {
     console.log("WebSocket opened");
   };
 
-  Socket.onmessage = (e) => {    
+  Socket.onmessage = (e) => {
     const data = JSON.parse(e.data);
     if (data) {
 

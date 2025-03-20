@@ -78,7 +78,7 @@ func WebsocketHandler(w http.ResponseWriter, r *http.Request) {
 				Errors(w, structs.Error{Code: http.StatusInternalServerError, Message: "Check your input"})
 				return
 			}
-			reciever, err:= database.GetUser(message.RecieverId)
+			reciever, err := database.GetUser(message.RecieverId)
 			if err != nil {
 				Errors(w, structs.Error{Code: http.StatusNotFound, Message: "User not found"})
 				return
@@ -179,14 +179,13 @@ func Messages(w http.ResponseWriter, r *http.Request) {
 		Errors(w, structs.Error{Code: http.StatusNotFound, Message: "Page not found"})
 		return
 	}
-	idConversation, err := strconv.ParseInt(r.URL.Path[len("/messages/"):], 10, 64)
+	idConversation, err := strconv.ParseInt(r.PathValue("userId"), 10, 64)
 	if err != nil {
 		Errors(w, structs.Error{Code: http.StatusBadRequest, Message: "Invalid post ID"})
 		return
 	}
 	userRecieved, err := database.GetUser(idConversation)
 	if err != nil {
-		fmt.Println(err)
 		Errors(w, structs.Error{Code: http.StatusNotFound, Message: "Invalid User"})
 		return
 	}
@@ -200,9 +199,40 @@ func Messages(w http.ResponseWriter, r *http.Request) {
 	}
 	conversation, err := database.GetConversation(user, userRecieved, limit, offset)
 	if err != nil {
+		fmt.Println(err)
 		Errors(w, structs.Error{Code: http.StatusInternalServerError, Message: "Error loading users"})
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(conversation)
+}
+
+func Read(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		Errors(w, structs.Error{Code: http.StatusMethodNotAllowed, Message: "Method not allowed"})
+		return
+	}
+	cookie, err := r.Cookie("session")
+	var user *structs.User
+	if err == nil {
+		user, err = database.GetUserConnected(cookie.Value)
+		if err != nil {
+			http.SetCookie(w, &http.Cookie{Name: "session", Value: "", MaxAge: -1})
+			Errors(w, structs.Error{Code: http.StatusNotFound, Message: "Page not found"})
+			return
+		}
+	} else {
+		Errors(w, structs.Error{Code: http.StatusNotFound, Message: "Page not found"})
+		return
+	}
+	idUser, err := strconv.ParseInt(r.URL.Path[len("/read/"):], 10, 64)
+	if err != nil {
+		Errors(w, structs.Error{Code: http.StatusBadRequest, Message: "Invalid post ID"})
+		return
+	}
+	if err := database.ReadConversation(user.ID, idUser); err != nil {
+		fmt.Println(err)
+		Errors(w, structs.Error{Code: http.StatusInternalServerError, Message: "Error loading users"})
+		return
+	}
 }

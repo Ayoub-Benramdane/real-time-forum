@@ -57,6 +57,7 @@ type Message struct {
 	ToUsername   string `sqlite:"to_username" json:"to_username"`
 	Content      string `sqlite:"content" json:"content"`
 	CreatedAt    string `sqlite:"created_at" json:"created_at"`
+	Status      string    `sqlite:"status" json:"status"`
 }
 
 type Conversation struct {

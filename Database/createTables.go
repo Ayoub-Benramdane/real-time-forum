@@ -112,6 +112,7 @@ func CreateTables() error {
 			from_username TEXT NOT NULL,
 			to_username TEXT NOT NULL,
 			content TEXT NOT NULL,
+			status TEXT NOT NULL,
 			created_at DATETIME NOT NULL,
 			FOREIGN KEY (from_user) REFERENCES users(id) ON DELETE CASCADE,
 			FOREIGN KEY (to_user) REFERENCES users(id) ON DELETE CASCADE
