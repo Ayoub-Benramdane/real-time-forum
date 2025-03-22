@@ -248,7 +248,7 @@ export async function displayChat(userId, username, newOffset, isFirstLoad) {
 
     const chatUserInfo = document.createElement("div");
     chatUserInfo.className = "chat-user-info";
-    chatUserInfo.innerHTML = `<i class="fas fa-user-circle"></i> <span id="currentChatUser">${username}</span>`;
+    chatUserInfo.innerHTML = `<i class="fas fa-user-circle"></i> <span id="currentChatUser">${username}</span> <span id="typing"></span>`;
 
     chatHeader.appendChild(chatUserInfo);
     chatSection.appendChild(chatHeader);

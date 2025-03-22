@@ -1053,6 +1053,23 @@ button:hover {
   border-left: 2px solid #ff6b6b;
 }
 
+#typing {
+  display: inline-block;
+  font-weight: bold;
+}
+
+@keyframes dotAnimation {
+  0% { content: "ecrit." }
+  33% { content: "ecrit.." }
+  66% { content: "ecrit..." }
+  100% { content: "ecrit." }
+}
+
+#typing {
+  animation: dotAnimation 1.5s infinite;
+}
+
+
 /* Responsive Adjustments */
 @media (max-width: 576px) {
   #register-panel form {

@@ -76,7 +76,7 @@ export async function sendMessage(event) {
   const chatMessages = document.getElementById("chatMessages");
   const userId = chatMessages.dataset.userId;
   const receiver = chatMessages.dataset.username;
-  const sender = document.getElementById("sender-name").innerText
+  const sender = document.getElementById("sender-name").innerText;
   const content = document.getElementById("messageInput").value.trim();
   if (content.length > 30) {
     alert("Ktb gher chwia")
@@ -108,6 +108,22 @@ document.addEventListener("input", function (e) {
   }
 });
 
+document.addEventListener("keydown", async function (e) {
+  if (e.target.closest("#messageInput")) {
+    const chatMessages = document.getElementById("chatMessages");
+    const userId = chatMessages.dataset.userId;
+    const sender = document.getElementById("sender-name").innerText;
+    const receiver = chatMessages.dataset.username;
+    const message = {
+      reciever_id: parseInt(userId, 10),
+      receiver_username: receiver,
+      sender_username: sender,
+      type: "typing",
+    };
+    await Socket.send(JSON.stringify(message));
+  }
+});
+
 document.addEventListener("click", async function (e) {
   const userChatElement = e.target.closest(".user-item");
   if (userChatElement) {
@@ -115,7 +131,6 @@ document.addEventListener("click", async function (e) {
     const username = userChatElement.dataset.username;
     const activeNavItem = document.querySelector(".nav-item.active");
     const activePanel = document.querySelector(".panel.active");
-
     if (activeNavItem) {
       activeNavItem.classList.remove("active");
     }
@@ -143,7 +158,7 @@ export function webSocket() {
       if (Array.isArray(data)) {
         document.querySelector(".users-content").innerHTML = renderUsers(data);
       } else {
-        if (data.type === "message") {          
+        if (data.type === "message") {
           const div = document.getElementById("chatMessages");
           const username = document.getElementById("currentChatUser").innerText;
           const messageDiv = document.createElement("div");
@@ -178,10 +193,37 @@ export function webSocket() {
             const userId = userItem.dataset.userId;
             if (userId == data.receiver || userId == data.sender) {
               userItem.remove();
-              document.querySelector(".users-content").prepend(newUser);              
+              document.querySelector(".users-content").prepend(newUser);
               document.getElementById(`cnv-user-${data.sender}`).innerHTML = `<i class="fa-regular fa-bell"></i>`;
             }
           })
+        } else if (data.type === "typing") {
+          const div = document.getElementById("currentChatUser");
+          if (div) {
+            const username = div.innerText;
+            if (data.sender_username == username) {
+              const typingElement = document.getElementById("typing");
+              setTimeout(() => {
+                if (typingElement && typingElement.innerText == "") {
+                  typingElement.innerHTML = "ecrit";
+                  let count = 0;
+                  const typingInterval = setInterval(() => {
+                    if (count < 3) {
+                      typingElement.innerHTML += ".";
+                      count++;
+                    } else {
+                      typingElement.innerHTML = "ecrit";
+                      count = 0;
+                    }
+                  }, 500);
+                  setTimeout(() => {
+                    clearInterval(typingInterval);
+                    typingElement.innerHTML = "";
+                  }, 1500);
+                }
+              }, 1000);
+            }
+          }
         } else if (data.type === "userstatus") {
           const user = document.getElementById(`user-${data.id}`);
           if (user != null && data.status === true) {

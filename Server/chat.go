@@ -97,6 +97,13 @@ func WebsocketHandler(w http.ResponseWriter, r *http.Request) {
 				"receiver_username": message.RecieverUsername,
 			}
 			Sendchat(messageSocket, message.RecieverId, user.ID)
+		} else if message.Type == "typing" {
+			messageSocket := map[string]interface{}{
+				"type":              "typing",
+				"sender_username":   message.SenderUsername,
+				"receiver_username": message.RecieverUsername,
+			}
+			Sendchat(messageSocket, message.RecieverId, user.ID)
 		}
 	}
 	Removeclient(conn, user.ID)
