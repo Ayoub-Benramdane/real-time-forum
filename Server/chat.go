@@ -87,15 +87,16 @@ func WebsocketHandler(w http.ResponseWriter, r *http.Request) {
 				Errors(w, structs.Error{Code: http.StatusInternalServerError, Message: "Error sending message"})
 				return
 			}
-			message1 := map[string]interface{}{
+			messageSocket := map[string]interface{}{
 				"type":              "message",
 				"content":           html.EscapeString(message.Content),
 				"sender":            user.ID,
 				"receiver":          message.RecieverId,
+				"status":            reciever.Status,
 				"sender_username":   message.SenderUsername,
 				"receiver_username": message.RecieverUsername,
 			}
-			Sendchat(message1, message.RecieverId, user.ID)
+			Sendchat(messageSocket, message.RecieverId, user.ID)
 		}
 	}
 	Removeclient(conn, user.ID)
@@ -199,7 +200,6 @@ func Messages(w http.ResponseWriter, r *http.Request) {
 	}
 	conversation, err := database.GetConversation(user, userRecieved, limit, offset)
 	if err != nil {
-		fmt.Println(err)
 		Errors(w, structs.Error{Code: http.StatusInternalServerError, Message: "Error loading users"})
 		return
 	}
@@ -227,12 +227,25 @@ func Read(w http.ResponseWriter, r *http.Request) {
 	}
 	idUser, err := strconv.ParseInt(r.URL.Path[len("/read/"):], 10, 64)
 	if err != nil {
-		Errors(w, structs.Error{Code: http.StatusBadRequest, Message: "Invalid post ID"})
+		Errors(w, structs.Error{Code: http.StatusBadRequest, Message: "Invalid conversation ID"})
 		return
 	}
-	if err := database.ReadConversation(user.ID, idUser); err != nil {
-		fmt.Println(err)
-		Errors(w, structs.Error{Code: http.StatusInternalServerError, Message: "Error loading users"})
+	userRecieved, err := database.GetUser(idUser)
+	if err != nil {
+		Errors(w, structs.Error{Code: http.StatusNotFound, Message: "Invalid User"})
 		return
+	}
+	conversation, err := database.GetConversation(user, userRecieved, 1, 0)
+	if err != nil {
+		Errors(w, structs.Error{Code: http.StatusInternalServerError, Message: "Error loading conversation"})
+		return
+	}
+	if len(conversation) > 0 {
+		if conversation[0].FromID != user.ID {
+			if err := database.ReadConversation(user.ID, idUser); err != nil {
+				Errors(w, structs.Error{Code: http.StatusInternalServerError, Message: "Error loading users"})
+				return
+			}
+		}
 	}
 }

@@ -665,6 +665,7 @@ button:hover {
 }
 
 .message.sent {
+  text-align: right;
   align-self: flex-end;
   background: rgba(45, 55, 90, 0.9);
   border-bottom-right-radius: 0.3rem;
@@ -674,6 +675,12 @@ button:hover {
   align-self: flex-start;
   background: rgba(25, 25, 40, 0.9);
   border-bottom-left-radius: 0.3rem;
+}
+
+.message-username {
+  font-weight: 500;
+  margin-bottom: 0.2rem;
+  color: rgba(134, 127, 127, 0.8);
 }
 
 .message-time {

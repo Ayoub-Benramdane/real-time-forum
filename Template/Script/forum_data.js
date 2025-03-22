@@ -187,5 +187,5 @@ async function renderPageStructure(data) {
     }
 
     body.innerHTML = htmlStructure;
-    if (data.User && data.User.status === "Connected") await displayPosts()
+    if (data.User && data.User.status === "Connected") await displayPosts(0, false)
 }

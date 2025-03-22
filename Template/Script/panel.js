@@ -147,12 +147,15 @@ async function displayLikedPosts(scrol) {
 }
 
 function appendPosts(posts, divPosts, scrol) {
+  console.log(posts);
+  
   if (posts == null || posts.length === 0) {
     const currentOffset = divPosts.id === "all-posts" ? postsOffset - limit :
       divPosts.id === "my-posts" ? myPostsOffset - limit :
         likedPostsOffset - limit;
     if (currentOffset <= 0 && !scrol) {
       const postDiv = document.createElement("h3");
+      postDiv.id = "no-posts";
       postDiv.style = "text-align:center";
       postDiv.innerHTML = "No Posts Available";
       divPosts.append(postDiv);

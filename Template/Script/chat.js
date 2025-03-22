@@ -50,19 +50,24 @@ export async function loadChat(userId, username, messages, isFirstLoad) {
     chatMessages.dataset.username = username;
     document.getElementById("currentChatUser").textContent = username;
     chatMessages.innerHTML = "";
+    const cnv = document.getElementById(`cnv-user-${userId}`);
+    if (cnv) {
+      cnv.innerHTML = "";
+    }
   }
   if (messages) {
     messages.forEach((message) => {
       const messageDiv = document.createElement("div");
-      messageDiv.className = `message ${message.from != username ? "sent" : "received"
+      messageDiv.className = `message ${message.from_username != username ? "sent" : "received"
         }`;
       messageDiv.innerHTML = `
-          <div class="message-time">${messageDiv.className == "sent" ? message.to : message.from}</div>
+          <div class="message-username">${messageDiv.className == "sent" ? message.to_username : message.from_username}</div>
           <div class="message-content">${message.content}</div>
           <div class="message-time">${message.created_at}</div>
         `;
       chatMessages.prepend(messageDiv);
     });
+    chatMessages.scrollTop = chatMessages.scrollHeight;
   }
 }
 
@@ -73,7 +78,7 @@ export async function sendMessage(event) {
   const receiver = chatMessages.dataset.username;
   const sender = document.getElementById("sender-name").innerText
   const content = document.getElementById("messageInput").value.trim();
-  if (content.length > 20) {
+  if (content.length > 30) {
     alert("Ktb gher chwia")
     return
   }
@@ -86,7 +91,8 @@ export async function sendMessage(event) {
   };
 
   if (message.content) {
-    Socket.send(JSON.stringify(message));
+    document.getElementById(`cnv-user-${userId}`).innerHTML = "";
+    await Socket.send(JSON.stringify(message));
   }
 }
 
@@ -134,14 +140,15 @@ export function webSocket() {
   Socket.onmessage = (e) => {
     const data = JSON.parse(e.data);
     if (data) {
-
       if (Array.isArray(data)) {
         document.querySelector(".users-content").innerHTML = renderUsers(data);
       } else {
-        if (data.type === "message") {
+        if (data.type === "message") {          
           const div = document.getElementById("chatMessages");
+          const username = document.getElementById("currentChatUser").innerText;
           const messageDiv = document.createElement("div");
-          if (div) {
+          let CnvUserId;
+          if (div && (username == data.sender_username || username == data.receiver_username)) {
             const username = document.createElement("div");
             username.className = "message-time";
             username.innerHTML = data.sender_username;
@@ -155,8 +162,10 @@ export function webSocket() {
             messageTime.innerHTML = "Just now";
             messageDiv.appendChild(messageTime);
             if (div.dataset.userId == data.sender) {
+              CnvUserId = data.sender;
               messageDiv.className = "message received";
             } else {
+              CnvUserId = data.sender;
               messageDiv.className = "message sent";
             }
             div.appendChild(messageDiv);
@@ -169,11 +178,12 @@ export function webSocket() {
             const userId = userItem.dataset.userId;
             if (userId == data.receiver || userId == data.sender) {
               userItem.remove();
-              document.querySelector(".users-content").prepend(newUser);
+              document.querySelector(".users-content").prepend(newUser);              
+              document.getElementById(`cnv-user-${data.sender}`).innerHTML = `<i class="fa-regular fa-bell"></i>`;
             }
           })
         } else if (data.type === "userstatus") {
-          const user = document.getElementById(`user-${data.id}`)
+          const user = document.getElementById(`user-${data.id}`);
           if (user != null && data.status === true) {
             user.classList.remove("offline");
             user.classList.add("online");
@@ -196,8 +206,8 @@ export function webSocket() {
 }
 
 function renderUsers(users) {
+  const username = document.getElementById("sender-name").innerText;
   if (!users || !users.length) return "<p>No users available</p>";
-
   return users
     .map(
       (user) => `
@@ -209,6 +219,7 @@ function renderUsers(users) {
                 </span>
             </div>
         </div>
+        <div id="cnv-user-${user.id}">${user.status == "Not Read" && user.sender != username ? '<i class="fa-regular fa-bell"></i>' : ''}</div>
         <div id="user-${user.id}" class="user-status ${user.online ? 'online' : 'offline'}"></div>
     </div>
 `)
