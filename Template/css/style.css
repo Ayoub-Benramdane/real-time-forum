@@ -630,6 +630,10 @@ button:hover {
   font-weight: 500;
 }
 
+#currentChatUser {
+  padding-right: 20px;
+}
+
 .chat-messages {
   flex: 1;
   padding: 1.5rem;
@@ -649,6 +653,7 @@ button:hover {
   border-radius: 1.2rem;
   position: relative;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  overflow: scroll;
   animation: messageAppear 0.3s ease;
 }
 
@@ -1052,23 +1057,6 @@ button:hover {
   padding-left: 0.5rem;
   border-left: 2px solid #ff6b6b;
 }
-
-#typing {
-  display: inline-block;
-  font-weight: bold;
-}
-
-@keyframes dotAnimation {
-  0% { content: "ecrit." }
-  33% { content: "ecrit.." }
-  66% { content: "ecrit..." }
-  100% { content: "ecrit." }
-}
-
-#typing {
-  animation: dotAnimation 1.5s infinite;
-}
-
 
 /* Responsive Adjustments */
 @media (max-width: 576px) {

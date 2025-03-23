@@ -78,10 +78,6 @@ export async function sendMessage(event) {
   const receiver = chatMessages.dataset.username;
   const sender = document.getElementById("sender-name").innerText;
   const content = document.getElementById("messageInput").value.trim();
-  if (content.length > 30) {
-    alert("Ktb gher chwia")
-    return
-  }
   const message = {
     reciever_id: parseInt(userId, 10),
     receiver_username: receiver,
@@ -203,7 +199,6 @@ export function webSocket() {
             const username = div.innerText;
             if (data.sender_username == username) {
               const typingElement = document.getElementById("typing");
-              setTimeout(() => {
                 if (typingElement && typingElement.innerText == "") {
                   typingElement.innerHTML = "ecrit";
                   let count = 0;
@@ -219,9 +214,8 @@ export function webSocket() {
                   setTimeout(() => {
                     clearInterval(typingInterval);
                     typingElement.innerHTML = "";
-                  }, 1500);
+                  }, 4000);
                 }
-              }, 1000);
             }
           }
         } else if (data.type === "userstatus") {
