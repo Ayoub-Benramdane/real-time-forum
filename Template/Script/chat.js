@@ -1,6 +1,6 @@
 import { displayChat } from "./panel.js";
 let Socket = {};
-
+let chatOffset = 0;
 export async function loadChat(userId, username, messages, isFirstLoad) {
   try {
     const response = await fetch(`/read/${userId}`);
@@ -69,6 +69,22 @@ export async function loadChat(userId, username, messages, isFirstLoad) {
     });
     chatMessages.scrollTop = chatMessages.scrollHeight;
   }
+  const scrol = document.getElementById("chatMessages");
+  scrol?.addEventListener("scroll", () => {
+    const testchat = document.getElementById("chatMessages");
+
+    let scrollTops = testchat.scrollTop;
+
+    if (scrollTops === 0) {
+      if (chatMessages) {
+        const userId = chatMessages.dataset.userId;
+        const username = chatMessages.dataset.username;
+        chatOffset += 10
+        displayChat(userId, username, chatOffset, false);
+      }
+    }
+  });
+
 }
 
 export async function sendMessage(event) {
@@ -85,7 +101,10 @@ export async function sendMessage(event) {
     content: content,
     type: "message",
   };
-
+  if (message.content.length > 30) {
+    alert("ktb gher chwia!");
+    return
+  }
   if (message.content) {
     document.getElementById(`cnv-user-${userId}`).innerHTML = "";
     await Socket.send(JSON.stringify(message));
@@ -156,10 +175,14 @@ export function webSocket() {
       } else {
         if (data.type === "message") {
           const div = document.getElementById("chatMessages");
-          const username = document.getElementById("currentChatUser").innerText;
+          const usernme = document.getElementById("currentChatUser");
+          let username;
+          if (usernme) {
+            username = usernme.innerText;
+          }
           const messageDiv = document.createElement("div");
           let CnvUserId;
-          if (div && (username == data.sender_username || username == data.receiver_username)) {
+          if (div && username && (username == data.sender_username || username == data.receiver_username)) {
             const username = document.createElement("div");
             username.className = "message-time";
             username.innerHTML = data.sender_username;
@@ -199,23 +222,23 @@ export function webSocket() {
             const username = div.innerText;
             if (data.sender_username == username) {
               const typingElement = document.getElementById("typing");
-                if (typingElement && typingElement.innerText == "") {
-                  typingElement.innerHTML = "ecrit";
-                  let count = 0;
-                  const typingInterval = setInterval(() => {
-                    if (count < 3) {
-                      typingElement.innerHTML += ".";
-                      count++;
-                    } else {
-                      typingElement.innerHTML = "ecrit";
-                      count = 0;
-                    }
-                  }, 500);
-                  setTimeout(() => {
-                    clearInterval(typingInterval);
-                    typingElement.innerHTML = "";
-                  }, 4000);
-                }
+              if (typingElement && typingElement.innerText == "") {
+                typingElement.innerHTML = "ecrit";
+                let count = 0;
+                const typingInterval = setInterval(() => {
+                  if (count < 3) {
+                    typingElement.innerHTML += ".";
+                    count++;
+                  } else {
+                    typingElement.innerHTML = "ecrit";
+                    count = 0;
+                  }
+                }, 500);
+                setTimeout(() => {
+                  clearInterval(typingInterval);
+                  typingElement.innerHTML = "";
+                }, 4000);
+              }
             }
           }
         } else if (data.type === "userstatus") {

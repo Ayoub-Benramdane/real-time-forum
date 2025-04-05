@@ -46,7 +46,7 @@ function appendComment(comment, postId) {
   commentDiv.id = `comment-${comment.id}`;
   const commentHeader = `
         <div class="comment-header">
-            <span class="comment-author">${comment.author}</span>
+            <span class="comment-author"><i class="fas fa-user-circle"></i>${comment.author}</span>
             <span class="comment-date">${comment.created_at}</span>
         </div>`;
   const commentContent = `<p>${comment.content}</p>`;

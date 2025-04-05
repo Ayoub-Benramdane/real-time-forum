@@ -4,7 +4,7 @@ import { displayPosts } from "./panel.js"
 
 document.addEventListener("DOMContentLoaded", function () {
     if (location.pathname != "/") {
-        showError(404, "page not found");
+        showError(404, "Page not found");
         return
     }
     fetchForumData();
@@ -13,7 +13,6 @@ document.addEventListener("DOMContentLoaded", function () {
 export async function fetchForumData() {
     const loadingElement = document.getElementById("loading");
     if (loadingElement) loadingElement.style.display = "block";
-
     try {
         const response = await fetch("/forum_data");
         if (!response.ok) {

@@ -60,7 +60,7 @@ export async function displayPosts(offset, scrol) {
       },
     });
     if (response.ok) {
-      const posts = await response.json();      
+      const posts = await response.json();
       const divPosts = document.getElementById("all-posts");
       appendPosts(posts, divPosts, scrol);
       postsOffset += limit;
@@ -90,14 +90,6 @@ window.addEventListener("scroll", () => {
         break;
       case "liked-posts":
         displayLikedPosts(scrol);
-        break;
-      case "chat":
-        const chatMessages = document.getElementById("chatMessages");
-        if (chatMessages) {
-          const userId = chatMessages.dataset.userId;
-          const username = chatMessages.dataset.username;
-          displayChat(userId, username, chatOffset, false);
-        }
         break;
     }
   }
@@ -147,12 +139,8 @@ async function displayLikedPosts(scrol) {
 }
 
 function appendPosts(posts, divPosts, scrol) {
-  console.log(posts);
-  
   if (posts == null || posts.length === 0) {
-    const currentOffset = divPosts.id === "all-posts" ? postsOffset - limit :
-      divPosts.id === "my-posts" ? myPostsOffset - limit :
-        likedPostsOffset - limit;
+    const currentOffset = divPosts.id === "all-posts" ? postsOffset - limit : divPosts.id === "my-posts" ? myPostsOffset - limit : likedPostsOffset - limit;
     if (currentOffset <= 0 && !scrol) {
       const postDiv = document.createElement("h3");
       postDiv.id = "no-posts";
@@ -226,7 +214,7 @@ function appendPosts(posts, divPosts, scrol) {
 
     postDiv.appendChild(postActions);
     divPosts.append(postDiv);
-    
+
   });
 }
 
@@ -235,6 +223,7 @@ export async function displayChat(userId, username, newOffset, isFirstLoad) {
     chatOffset = newOffset;
   }
   if (isFirstLoad) {
+    chatOffset = 0;
     const mainContainer = document.getElementById("chat");
     mainContainer.innerHTML = "";
     const chatContainer = document.createElement("div");
@@ -265,8 +254,8 @@ export async function displayChat(userId, username, newOffset, isFirstLoad) {
     });
     if (response.ok) {
       const messages = await response.json();
-      loadChat(userId, username, messages, isFirstLoad);
-      chatOffset += limit;
+      if (!messages || messages.length === 0) return;
+      await loadChat(userId, username, messages, isFirstLoad);
     } else {
       console.error("Error fetching chat data:", response.statusText);
       showError(response.statusText)
@@ -374,4 +363,14 @@ function createNewPostForm(mainContainer, categories) {
   form.appendChild(buttonGroup);
 
   mainContainer.appendChild(form);
+
+  categorySelect.addEventListener('change', () => {
+    for (let option of categorySelect.options) {
+      if (option.selected) {
+        option.classList.add('selected');
+      } else {
+        option.classList.remove('selected');
+      }
+    }
+  });
 }

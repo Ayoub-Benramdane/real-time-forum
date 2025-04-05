@@ -138,12 +138,19 @@ function displayPost(data) {
 
       const commentAuthor = document.createElement("span");
       commentAuthor.className = "comment-author";
-      commentAuthor.textContent = comment.author;
-      commentHeader.appendChild(commentAuthor);
 
+      const userCircle = document.createElement("i");
+      userCircle.className = "fas fa-user-circle";
+      commentAuthor.appendChild(userCircle);
+
+      const authorText = document.createTextNode(comment.author);
+      commentAuthor.appendChild(authorText);
+
+      commentHeader.appendChild(commentAuthor);
+      
       const commentDate = document.createElement("span");
       commentDate.className = "comment-date";
-      commentDate.textContent = comment.createdAt;
+      commentDate.textContent = comment.created_at;
       commentHeader.appendChild(commentDate);
 
       commentDiv.appendChild(commentHeader);

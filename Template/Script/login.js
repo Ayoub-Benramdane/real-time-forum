@@ -54,15 +54,15 @@ document.addEventListener("submit", async function (event) {
       if (response.ok) {
         document.getElementById("login-panel").remove();
         document.getElementById("register-panel").remove();
-        fetchForumData(); 
-      } else if (response.status === 401) {        
+        fetchForumData();
+      } else if (response.status === 401) {
         document.getElementById("passwordError").textContent =
           "Invalid username or password.";
-      } else {
+      } else {        
         document.getElementById("passwordError").textContent =
           "An unexpected error occurred. Please try again.";
       }
-    } catch (error) {      
+    } catch (error) {
       console.error("Error fetching chat data:", error);
       showError(error)
     }
