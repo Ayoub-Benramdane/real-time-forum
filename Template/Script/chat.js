@@ -15,9 +15,10 @@ export async function loadChat(userId, username, messages, isFirstLoad) {
   }
   const chatSection = document.querySelector("#chat-section");
   let chatMessages = document.getElementById("chatMessages");
+
   if (isFirstLoad) {
     if (!chatMessages) {
-      isFirstLoad = true;
+      chatOffset = 0;
       chatMessages = document.createElement("div");
       chatMessages.className = "chat-messages";
       chatMessages.id = "chatMessages";
@@ -45,21 +46,15 @@ export async function loadChat(userId, username, messages, isFirstLoad) {
       chatInput.appendChild(messageForm);
       chatSection.appendChild(chatInput);
     }
-    chatMessages = document.getElementById("chatMessages");
     chatMessages.dataset.userId = userId;
     chatMessages.dataset.username = username;
     document.getElementById("currentChatUser").textContent = username;
     chatMessages.innerHTML = "";
-    const cnv = document.getElementById(`cnv-user-${userId}`);
-    if (cnv) {
-      cnv.innerHTML = "";
-    }
   }
   if (messages) {
     messages.forEach((message) => {
       const messageDiv = document.createElement("div");
-      messageDiv.className = `message ${message.from_username != username ? "sent" : "received"
-        }`;
+      messageDiv.className = `message ${message.from_username != username ? "sent" : "received"}`;
       messageDiv.innerHTML = `
           <div class="message-username">${messageDiv.className == "sent" ? message.to_username : message.from_username}</div>
           <div class="message-content">${message.content}</div>
@@ -67,23 +62,23 @@ export async function loadChat(userId, username, messages, isFirstLoad) {
         `;
       chatMessages.prepend(messageDiv);
     });
-    chatMessages.scrollTop = chatMessages.scrollHeight;
+    if (isFirstLoad) chatMessages.scrollTop = chatMessages.scrollHeight;
   }
   const scrol = document.getElementById("chatMessages");
-  scrol?.addEventListener("scroll", () => {
-    const testchat = document.getElementById("chatMessages");
-
-    let scrollTops = testchat.scrollTop;
-
-    if (scrollTops === 0) {
-      if (chatMessages) {
-        const userId = chatMessages.dataset.userId;
-        const username = chatMessages.dataset.username;
-        chatOffset += 10
-        displayChat(userId, username, chatOffset, false);
+  setTimeout(async () => {
+    scrol?.addEventListener("scroll", async () => {
+      const testchat = document.getElementById("chatMessages");
+      let scrollTops = testchat.scrollTop;
+      if (scrollTops === 0) {
+        if (chatMessages) {
+          const userId = chatMessages.dataset.userId;
+          const username = chatMessages.dataset.username;
+          chatOffset += 10
+          await displayChat(userId, username, false);
+        }
       }
-    }
-  });
+    });
+  }, 2000);
 
 }
 
@@ -106,7 +101,6 @@ export async function sendMessage(event) {
     return
   }
   if (message.content) {
-    document.getElementById(`cnv-user-${userId}`).innerHTML = "";
     await Socket.send(JSON.stringify(message));
   }
 }
@@ -154,7 +148,7 @@ document.addEventListener("click", async function (e) {
     }
     document.getElementById("chat").innerHTML = "";
     document.getElementById("chat").classList.add("active");
-    await displayChat(userId, username, 0, true);
+    await displayChat(userId, username, true);
   }
 });
 
@@ -213,7 +207,6 @@ export function webSocket() {
             if (userId == data.receiver || userId == data.sender) {
               userItem.remove();
               document.querySelector(".users-content").prepend(newUser);
-              document.getElementById(`cnv-user-${data.sender}`).innerHTML = `<i class="fa-regular fa-bell"></i>`;
             }
           })
         } else if (data.type === "typing") {

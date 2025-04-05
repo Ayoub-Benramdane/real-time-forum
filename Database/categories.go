@@ -4,7 +4,7 @@ import structs "forum/Data"
 
 func CreateCategoryies() error {
 	if cat := CheckCategory(); cat == nil {
-		categories := []string{"Sport", "General", "Tech", "Gaming", "Movies", "Music", "Health", "Travel", "Food", "Fashion", "Education", "Science", "Art", "Finance", "Lifestyle", "History"}
+		categories := []string{"Sport", "General", "Technology", "Gaming", "Movies", "Music", "Health", "Travel", "Food", "Fashion", "Education", "Science", "Art", "Finance", "Lifestyle", "History", "Fitness", "Books", "Photography", "Personal", "News"}
 		for _, category := range categories {
 			_, err := DB.Exec("INSERT INTO categories (name) VALUES (?)", category)
 			if err != nil {

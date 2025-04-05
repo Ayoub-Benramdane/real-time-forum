@@ -218,10 +218,7 @@ function appendPosts(posts, divPosts, scrol) {
   });
 }
 
-export async function displayChat(userId, username, newOffset, isFirstLoad) {
-  if (newOffset == 0) {
-    chatOffset = newOffset;
-  }
+export async function displayChat(userId, username, isFirstLoad) {
   if (isFirstLoad) {
     chatOffset = 0;
     const mainContainer = document.getElementById("chat");
@@ -254,7 +251,7 @@ export async function displayChat(userId, username, newOffset, isFirstLoad) {
     });
     if (response.ok) {
       const messages = await response.json();
-      if (!messages || messages.length === 0) return;
+      chatOffset += limit;
       await loadChat(userId, username, messages, isFirstLoad);
     } else {
       console.error("Error fetching chat data:", response.statusText);

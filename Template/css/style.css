@@ -11,9 +11,9 @@
 }
 
 :root {
-  --primary-color: #4f6cf7;
+  --primary-color: #4a68fd;
   --primary-light: rgba(79, 108, 247, 0.1);
-  --primary-dark: #3b56d4;
+  --primary-dark: #3a50b1;
   --bg-dark: rgba(59, 59, 65, 0.57);
   --bg-card: rgba(15, 15, 28, 0.55);
   --bg-input: rgba(20, 20, 32, 0.38);
@@ -62,7 +62,12 @@ body {
 }
 
 /* Typography Enhancements */
-h1, h2, h3, h4, h5, h6 {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
   font-weight: 600;
   line-height: 1.3;
   margin-bottom: 0.5em;
@@ -238,7 +243,7 @@ p {
 }
 
 .post::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: 0;
@@ -473,7 +478,7 @@ h2:after {
 }
 
 .form-select option.selected {
-  color: #4CAF50;
+  color: #4caf50;
 }
 
 /* Button Styles */
@@ -597,7 +602,7 @@ button:hover {
 }
 
 .user-status.online {
-  background: #4CAF50;
+  background: #4caf50;
   box-shadow: 0 0 8px rgba(76, 175, 80, 0.5);
 }
 
@@ -615,7 +620,7 @@ button:hover {
 .chat-header {
   padding: 1.4rem;
   border-bottom: 1px solid var(--border-color);
-  background: rgba(10, 10, 20, 0.9);
+  background: var(--border-color);
 }
 
 .chat-user-info {
@@ -640,7 +645,7 @@ button:hover {
   background: url("https://media.istockphoto.com/id/1371975727/fr/vectoriel/conversation-review-experience-rating-chat-speech-bubble.jpg?s=612x612&w=0&k=20&c=NGWx242iaVmzeA3v8g2o3SY32d_whLisskk0KPkxMLU=")
     center/cover;
   background-blend-mode: overlay;
-  background-color: rgba(8, 8, 15, 0.95);
+  background-color: rgba(8, 8, 15, 0.5);
 }
 
 .message {
@@ -672,7 +677,7 @@ button:hover {
 
 .message.received {
   align-self: flex-start;
-  background: rgba(25, 25, 40, 0.9);
+  background: var(--primary-dark);
   border-bottom-left-radius: 0.3rem;
 }
 
@@ -692,8 +697,8 @@ button:hover {
 .chat-input {
   width: 100%;
   padding: 1.2rem;
-  border-top: 1px solid var(--border-color);
-  background: rgba(10, 10, 20, 0.9);
+  border-top: 1px solid var(--bg-input);
+  background: var(--border-color);
 }
 
 .chat-input form {
@@ -942,7 +947,7 @@ button:hover {
 }
 
 .gender-option input[type="radio"]:checked::after {
-  content: '';
+  content: "";
   position: absolute;
   width: 12px;
   height: 12px;
