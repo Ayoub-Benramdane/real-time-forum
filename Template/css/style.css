@@ -963,6 +963,32 @@ button:hover {
   font-size: 1rem;
 }
 
+.container {
+    max-width: 600px;
+    margin: 50px auto;
+    padding: 20px;
+    border-radius: 16px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    background-color: var(--bg-dark);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    text-align: center;
+    animation: fadeIn 0.8s ease-in-out;
+  }
+
+  .container img {
+    max-width: 100%;
+    border-radius: 12px;
+    margin-bottom: 20px;
+  }
+
+  .error-message {
+    color: #d32f2f;
+    background-color: var(--bg-input);
+    font-size: 1.5rem;
+    margin: 10px 0;
+    word-break: break-word;
+  }
+
 /* Register Button Styles */
 #register-panel button[type="submit"] {
   width: 100%;

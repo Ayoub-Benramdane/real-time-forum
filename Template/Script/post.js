@@ -147,7 +147,7 @@ function displayPost(data) {
       commentAuthor.appendChild(authorText);
 
       commentHeader.appendChild(commentAuthor);
-      
+
       const commentDate = document.createElement("span");
       commentDate.className = "comment-date";
       commentDate.textContent = comment.created_at;

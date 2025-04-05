@@ -1,5 +1,5 @@
 import { showError } from "./errors.js";
-import { fetchForumData } from "./forum_data.js";
+import { fetchForumData } from "./main.js";
 
 document.addEventListener("click", function (e) {
   const loginPanel = e.target.closest("#login");
@@ -58,7 +58,7 @@ document.addEventListener("submit", async function (event) {
       } else if (response.status === 401) {
         document.getElementById("passwordError").textContent =
           "Invalid username or password.";
-      } else {        
+      } else {
         document.getElementById("passwordError").textContent =
           "An unexpected error occurred. Please try again.";
       }

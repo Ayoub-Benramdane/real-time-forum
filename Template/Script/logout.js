@@ -1,6 +1,5 @@
 import { showError } from "./errors.js";
-
-import { fetchForumData } from "./forum_data.js";
+import { fetchForumData } from "./main.js";
 document.addEventListener("click", async function (e) {
   if (e.target.closest("#logout")) {
     try {

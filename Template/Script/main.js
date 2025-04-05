@@ -31,8 +31,8 @@ export async function fetchForumData() {
 
 async function renderPageStructure(data) {
     const body = document.querySelector("body");
-    let htmlStructure = "";    
-    
+    let htmlStructure = "";
+
     if (data.User && data.User.status === "Connected") {
         webSocket();
         htmlStructure = `

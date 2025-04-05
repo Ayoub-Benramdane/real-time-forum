@@ -52,27 +52,15 @@ function appendComment(comment, postId) {
   const commentContent = `<p>${comment.content}</p>`;
   const likeDislike = `
         <div class="post-actions-cmt">
-                <button id="like-btn-${postId}-${
-    comment.id
-  }" class="action-btn-cmt"
-                onclick="updateLikeDislikeComment('like_comment', ${postId}, ${
-    comment.id
-  })">
-                        <i class="fas fa-thumbs-up"></i>
-                        <span id="like-count-${postId}${comment.id}"> ${
-    comment.totalLikes || 0
-  }</span>
+                <button id="like-btn-${postId}-${comment.id}" class="action-btn-cmt"
+                onclick="updateLikeDislikeComment('like_comment', ${postId}, ${comment.id})">
+                  <i class="fas fa-thumbs-up"></i>
+                  <span id="like-count-${postId}${comment.id}"> ${comment.totalLikes || 0}</span>
                 </button>
-                <button id="dislike-btn-${postId}${
-    comment.id
-  }" class="action-btn-cmt"
-                onclick="updateLikeDislikeComment('dislike_comment', ${postId}, ${
-    comment.id
-  })">
-                        <i class="fas fa-thumbs-down"></i>
-                        <span id="dislike-count-${postId}${comment.id}"> ${
-    comment.totalLikes || 0
-  }</span>
+                <button id="dislike-btn-${postId}${comment.id}" class="action-btn-cmt"
+                onclick="updateLikeDislikeComment('dislike_comment', ${postId}, ${comment.id})">
+                  <i class="fas fa-thumbs-down"></i>
+                  <span id="dislike-count-${postId}${comment.id}"> ${comment.totalLikes || 0}</span>
                 </button>
         </div>`;
   commentDiv.innerHTML = commentHeader + commentContent + likeDislike;
